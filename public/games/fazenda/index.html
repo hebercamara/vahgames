@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/games/fazenda/img/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#8B5A2B" />
+    <title>Nem que a Vaca Tussa!</title>
+    <link rel="preload" as="image" href="/games/fazenda/img/vaca.webp" />
+    <script type="module" crossorigin src="/games/fazenda/assets/index-DB8xWtub.js"></script>
+    <link rel="stylesheet" crossorigin href="/games/fazenda/assets/index-CKinbCJc.css">
+  </head>
+  <body>
+    <!-- Tela 1: Hub de jogos -->
+    <section id="screen-start" class="screen screen-start active">
+      <div class="scroll hub-scroll">
+        <button id="btn-sound" class="icon-btn sound-toggle" aria-label="Ligar ou desligar o som">🔊</button>
+        <a id="btn-portal" class="icon-btn portal-back" href="/" aria-label="Voltar ao VAH Games" hidden>←</a>
+        <div class="hub-hero">
+          <div class="hero-cow">
+            <img src="/games/fazenda/img/vaca.webp" alt="Vaca de gorro e cachecol, com termômetro na boca" class="hero-cow-img" width="280" height="235" />
+            <span class="hero-puff" aria-hidden="true">💨</span>
+          </div>
+          <h1 class="title">
+            <span class="title-top">Nem que a Vaca</span>
+            <span class="title-bottom">Tussa!</span>
+          </h1>
+          <p class="tagline">Jogos de equipe da fazenda. Escolha o seu:</p>
+        </div>
+
+        <div id="game-list" class="game-list"></div>
+        <div class="fence hub-fence" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <!-- Tela 2: Configuração (comum aos jogos) -->
+    <section id="screen-setup" class="screen">
+      <header class="screen-header">
+        <button class="icon-btn" data-back aria-label="Voltar">←</button>
+        <div class="sign"><h2 id="setup-title">Configurar partida</h2></div>
+        <span class="icon-btn-spacer"></span>
+      </header>
+
+      <div class="scroll">
+        <section class="panel">
+          <h3 class="panel-title">🐮 Quem vai jogar?</h3>
+          <div class="add-player">
+            <input type="text" id="input-player-name" placeholder="Nome do jogador" autocomplete="off" maxlength="20" enterkeyhint="done" />
+            <button id="btn-add-player" class="btn btn-orange btn-square" aria-label="Adicionar jogador">+</button>
+          </div>
+          <ul id="player-list" class="player-list"></ul>
+          <p id="players-hint" class="hint">Adicione pelo menos 2 jogadores. Toque no bichinho para trocar o avatar.</p>
+        </section>
+
+        <!-- Opções do Nem que a Vaca Tussa -->
+        <div id="setup-vaca">
+          <section class="panel">
+            <h3 class="panel-title">🃏 Limite de cartas</h3>
+            <div class="stepper">
+              <button id="btn-points-minus" class="step-btn" aria-label="Diminuir limite">−</button>
+              <output id="points-value" class="step-value">5</output>
+              <button id="btn-points-plus" class="step-btn" aria-label="Aumentar limite">+</button>
+            </div>
+            <p class="hint center">Quem chegar a esse número de cartas encerra a partida.</p>
+          </section>
+
+          <section class="panel">
+            <label class="switch-row">
+              <span class="switch-text">
+                <strong>⚔️ Desempate automático</strong>
+                <small>Empatou no fim? Mata-mata entre os empatados!</small>
+              </span>
+              <input type="checkbox" id="checkbox-tiebreaker" checked />
+              <span class="switch" aria-hidden="true"></span>
+            </label>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title-row">
+              <h3 class="panel-title">📚 Categorias</h3>
+              <button id="btn-cats-all" class="link-btn">Marcar todas</button>
+            </div>
+            <div id="category-list" class="chips"></div>
+            <p id="cats-summary" class="hint"></p>
+          </section>
+        </div>
+
+        <!-- Opções da Maria e da Ovelha Negra -->
+        <div id="setup-herd" class="hidden">
+          <section class="panel">
+            <h3 class="panel-title">🎲 Modo de jogo</h3>
+            <div class="segmented" role="radiogroup" aria-label="Modo de jogo">
+              <button id="mode-grito" class="segment" role="radio">
+                <span class="segment-icon">📣</span><strong>Grito</strong><small>Contagem 5…1 e todo mundo fala junto</small>
+              </button>
+              <button id="mode-segredo" class="segment" role="radio">
+                <span class="segment-icon">🤫</span><strong>Segredo</strong><small>Cada um digita escondido e o app agrupa</small>
+              </button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h3 class="panel-title" id="target-title">🌾 Fenos para vencer</h3>
+            <div class="stepper">
+              <button id="btn-target-minus" class="step-btn" aria-label="Diminuir meta">−</button>
+              <output id="target-value" class="step-value">8</output>
+              <button id="btn-target-plus" class="step-btn" aria-label="Aumentar meta">+</button>
+            </div>
+            <p class="hint center" id="target-hint">Quem juntar esse tanto primeiro vence.</p>
+          </section>
+
+          <section class="panel" id="setup-sino">
+            <label class="switch-row">
+              <span class="switch-text">
+                <strong>🔔 Sino da vergonha</strong>
+                <small>Quem ficar sozinho com uma resposta leva o sino e não pode vencer enquanto estiver com ele.</small>
+              </span>
+              <input type="checkbox" id="checkbox-sino" checked />
+              <span class="switch" aria-hidden="true"></span>
+            </label>
+          </section>
+        </div>
+      </div>
+
+      <div class="bottom-actions">
+        <button id="btn-begin" class="btn btn-orange btn-big" disabled>Começar partida</button>
+      </div>
+    </section>
+
+    <!-- Tela 3: Nem que a Vaca Tussa -->
+    <section id="screen-game" class="screen screen-game">
+      <header class="game-top">
+        <button class="icon-btn icon-btn-light" data-pause aria-label="Pausar">⏸</button>
+        <div id="scoreboard" class="scoreboard"></div>
+      </header>
+
+      <div class="game-area">
+        <div class="round-info">
+          <span id="round-label" class="round-label">Carta 1</span>
+          <span id="sudden-badge" class="sudden-badge hidden">⚔️ Mata-mata</span>
+        </div>
+
+        <div class="card-scene">
+          <div class="card" id="game-card">
+            <div class="card-face card-front">
+              <div class="card-tag" id="card-tag"><span id="tag-icon"></span><span id="tag-name"></span></div>
+              <div class="card-body"><h3 id="question-text">Carregando pergunta...</h3></div>
+              <div class="card-foot"><img src="/games/fazenda/img/sino.svg" alt="" width="18" height="20" /><span>Chute sempre um número <strong>maior</strong> que o anterior</span></div>
+            </div>
+            <div class="card-face card-back">
+              <p class="chalk-label">A resposta é…</p>
+              <div class="answer">
+                <span id="answer-before" class="answer-unit"></span>
+                <span id="answer-number" class="answer-number">?</span>
+                <span id="answer-unit" class="answer-unit"></span>
+              </div>
+              <p id="explanation-text" class="chalk-text"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-actions game-actions" id="action-area">
+        <button id="btn-reveal" class="btn-reveal" aria-label="Nem que a vaca tussa!">
+          <img src="/games/fazenda/img/botao.webp" alt="" width="1000" height="524" />
+        </button>
+        <div id="assign-area" class="assign-area hidden">
+          <h3>Quem levou a carta?</h3>
+          <div id="assign-buttons" class="assign-buttons"></div>
+        </div>
+      </div>
+
+      <div id="cough-fx" class="cough-fx" aria-hidden="true">
+        <img src="/games/fazenda/img/vaca-tossindo.webp" alt="" width="520" height="417" />
+      </div>
+    </section>
+
+    <!-- Tela 4: Maria vai com as Outras / Ovelha Negra -->
+    <section id="screen-herd" class="screen screen-game">
+      <header class="game-top">
+        <button class="icon-btn icon-btn-light" data-pause aria-label="Pausar">⏸</button>
+        <div id="herd-scoreboard" class="scoreboard"></div>
+      </header>
+
+      <div class="herd-area">
+        <div class="round-info">
+          <span id="herd-round" class="round-label">Rodada 1</span>
+          <span id="herd-mode" class="round-label">📣 Grito</span>
+        </div>
+
+        <div id="herd-card" class="herd-card">
+          <div id="herd-tag" class="card-tag"></div>
+          <div class="card-body"><h3 id="herd-question"></h3></div>
+          <p id="herd-hint" class="card-foot"></p>
+        </div>
+
+        <div id="herd-panel" class="herd-panel"></div>
+      </div>
+
+      <div id="herd-actions" class="bottom-actions"></div>
+
+      <!-- Contagem regressiva do modo grito -->
+      <div id="countdown" class="countdown hidden" aria-live="assertive">
+        <img id="countdown-img" src="/games/fazenda/img/vaca.webp" alt="" class="countdown-img" />
+        <span id="countdown-num" class="countdown-num">5</span>
+        <span class="countdown-label">Preparem a resposta…</span>
+      </div>
+
+      <!-- Passa-passa do modo segredo -->
+      <div id="secret" class="secret-overlay hidden">
+        <div id="secret-box" class="secret-box"></div>
+      </div>
+    </section>
+
+    <!-- Tela 5: Fim de jogo (comum) -->
+    <section id="screen-end" class="screen screen-end">
+      <div class="scroll">
+        <div class="sign sign-big"><h2 id="end-title">Fim de jogo!</h2></div>
+        <div id="podium" class="podium"></div>
+        <div id="busted" class="busted"></div>
+        <section class="panel">
+          <h3 class="panel-title">📋 Placar final</h3>
+          <ol id="final-list" class="final-list"></ol>
+        </section>
+      </div>
+      <div class="bottom-actions">
+        <button id="btn-restart" class="btn btn-orange btn-big">Jogar de novo</button>
+        <button id="btn-home" class="btn btn-wood">Escolher outro jogo</button>
+      </div>
+    </section>
+
+    <!-- Tela 6: Regras (montadas por jogo) -->
+    <section id="screen-rules" class="screen">
+      <header class="screen-header">
+        <button class="icon-btn" data-back aria-label="Voltar">←</button>
+        <div class="sign"><h2 id="rules-title">Como jogar</h2></div>
+        <span class="icon-btn-spacer"></span>
+      </header>
+
+      <div class="scroll">
+        <ol id="rules-steps" class="steps"></ol>
+      </div>
+
+      <div class="bottom-actions">
+        <button id="btn-rules-play" class="btn btn-orange btn-big">Bora jogar!</button>
+      </div>
+    </section>
+
+    <!-- Modal genérico (avisos e confirmações) -->
+    <div id="modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-box">
+        <img src="/games/fazenda/img/vaca.webp" alt="" class="modal-cow" width="110" height="92" />
+        <h2 id="modal-title"></h2>
+        <p id="modal-message"></p>
+        <div id="modal-buttons" class="modal-buttons"></div>
+      </div>
+    </div>
+
+  </body>
+</html>

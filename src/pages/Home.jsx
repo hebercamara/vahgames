@@ -106,7 +106,48 @@ const GAMES = [
     tagline: 'Junte os números até chegar ao 2048.',
     isNew: true,
   },
+  // Fazenda: hub "Nem que a Vaca Tussa" (repositório hebercamara/Nem-que-a-Vaca-Tussa),
+  // build web em public/games/fazenda. Jogos de grupo para um celular só.
+  ...[
+    {
+      id: 'vaca',
+      title: 'Nem que a Vaca Tussa!',
+      image: '/games/fazenda/img/vaca-tossindo.webp',
+      tagline: 'Chute números cada vez maiores e duvide de quem exagerou.',
+      players: '2 a 12 jogadores',
+      kind: 'Chute e blefe',
+      accent: '#FF9F1C',
+    },
+    {
+      id: 'maria',
+      title: 'Maria vai com as Outras',
+      image: '/games/fazenda/img/maria-logo.webp',
+      tagline: 'Pense igual à maioria! Quem acompanha a boiada ganha feno.',
+      players: '3 a 12 jogadores',
+      kind: 'Pense igual',
+      accent: '#6E9455',
+    },
+    {
+      id: 'ovelha',
+      title: 'Ovelha Negra',
+      image: '/games/fazenda/img/ovelha-logo.webp',
+      tagline: 'Fuja do óbvio! Só pontua quem der uma resposta que ninguém mais deu.',
+      players: '3 a 12 jogadores',
+      kind: 'Pense diferente',
+      accent: '#3B3946',
+    },
+  ].map((g) => ({
+    ...g,
+    rating: 5,
+    gameLink: `/games/fazenda/index.html?jogo=${g.id}`,
+    category: 'grupo',
+    farm: true,
+    isNew: true,
+  })),
 ];
+
+const FARM_GAMES = GAMES.filter((g) => g.farm);
+const SOLO_GAMES = GAMES.filter((g) => !g.farm);
 
 // Cada categoria usa um dos gradientes de seção do DESIGN.md
 const CATEGORIES = [
@@ -117,6 +158,7 @@ const CATEGORIES = [
   { id: 'quebra-cabeca', label: 'Quebra-cabeça', gradient: 'bg-grad-green' },
   { id: 'tabuleiro', label: 'Tabuleiro', gradient: 'bg-grad-blue' },
   { id: 'multijogador', label: 'Multijogador', gradient: 'bg-grad-violet' },
+  { id: 'grupo', label: 'Em grupo', gradient: 'bg-grad-olive' },
 ];
 
 const RANKING = [
@@ -161,6 +203,12 @@ const icons = {
       <path d="M16 6h3a2 2 0 0 1-2 4h-1M8 6H5a2 2 0 0 0 2 4h1M12 13v4M8.5 20.5h7M10 17h4" />
     </>
   ),
+  barn: (
+    <>
+      <path d="M3 10 12 4l9 6v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
+      <path d="M8 21v-7h8v7M8 14l8 7M16 14l-8 7" />
+    </>
+  ),
   users: (
     <>
       <circle cx="9" cy="8" r="3.5" />
@@ -188,6 +236,7 @@ const NAV_ITEMS = [
   { href: '#inicio', label: 'Início', icon: icons.home },
   { href: '#jogos', label: 'Jogos', icon: icons.games },
   { href: '#categorias', label: 'Gêneros', icon: icons.grid },
+  { href: '#fazenda', label: 'Fazenda', icon: icons.barn },
   { href: '#ranking', label: 'Ranking', icon: icons.trophy },
   { href: '#comunidade', label: 'Turma', icon: icons.users },
 ];
@@ -388,6 +437,83 @@ const Categories = ({ active, onSelect }) => (
 // Ranking e comunidade
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Fazenda: seção à parte com os jogos de grupo, no tema de quadro-negro e madeira do app
+// ---------------------------------------------------------------------------
+
+const FARM = {
+  board: '#2E3B33',
+  wood: '#8B5A2B',
+  woodDark: '#5C3A1A',
+  cream: '#FFF6E5',
+  paper: '#FDF8EE',
+  orange: '#FF9F1C',
+};
+
+const FarmCard = ({ game }) => (
+  <a
+    href={game.gameLink}
+    className="group flex w-[260px] shrink-0 snap-start flex-col overflow-hidden rounded-xs border-[3px] transition duration-200 hover:-translate-y-1 hover:shadow-lift sm:w-[300px]"
+    style={{ background: FARM.paper, borderColor: FARM.woodDark, boxShadow: `0 5px 0 ${FARM.woodDark}` }}
+  >
+    <div className="h-2" style={{ background: game.accent }} />
+    <div className="flex items-center gap-4 p-4">
+      <img
+        src={game.image}
+        alt=""
+        loading="lazy"
+        className="h-20 w-20 shrink-0 rounded-xs border-[3px] object-cover"
+        style={{ borderColor: game.accent }}
+      />
+      <div className="min-w-0">
+        <h3 className="text-[18px] font-black leading-tight" style={{ color: FARM.woodDark }}>{game.title}</h3>
+        <p className="mt-1 text-caption uppercase" style={{ color: FARM.wood }}>{game.kind} · {game.players}</p>
+      </div>
+    </div>
+    <p className="px-4 text-body-md" style={{ color: '#5B4636' }}>{game.tagline}</p>
+    <span
+      className="mx-4 mb-4 mt-4 inline-flex h-10 items-center justify-center rounded-full text-[14px] font-extrabold text-white transition group-hover:brightness-105"
+      style={{ background: FARM.orange, boxShadow: `0 4px 0 ${FARM.woodDark}` }}
+    >
+      Jogar
+    </span>
+  </a>
+);
+
+const FarmSection = () => (
+  <section id="fazenda" className="scroll-mt-24 px-4 md:px-8">
+    <div
+      className="relative overflow-hidden rounded-sm border-[6px] p-5 md:p-8"
+      style={{ background: FARM.board, borderColor: FARM.wood, boxShadow: `inset 0 0 0 2px ${FARM.woodDark}` }}
+    >
+      <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 items-center gap-3 md:gap-4">
+          <img src="/games/fazenda/img/vaca.webp" alt="" className="h-14 w-auto shrink-0 drop-shadow-lg md:h-24" />
+          <div className="min-w-0">
+            <p className="text-caption uppercase" style={{ color: FARM.orange }}>Jogos em grupo · um celular só</p>
+            <h2 className="font-display text-[24px] font-black uppercase leading-tight text-ink md:text-[32px]">Fazenda</h2>
+            <p className="mt-1 max-w-xl text-body-md text-body">
+              Junte a turma em volta do celular: blefe, pense igual à boiada ou seja a ovelha negra.
+            </p>
+          </div>
+        </div>
+        <a
+          href="/games/fazenda/index.html"
+          className="inline-flex h-10 shrink-0 items-center justify-center self-start rounded-full px-5 text-[14px] font-extrabold md:self-auto"
+          style={{ background: FARM.cream, color: FARM.woodDark, boxShadow: `0 4px 0 ${FARM.woodDark}` }}
+        >
+          Abrir a Fazenda
+        </a>
+      </div>
+      <div className="no-scrollbar -mx-5 mt-6 flex snap-x gap-4 overflow-x-auto px-5 pb-3 pt-1 md:-mx-8 md:px-8">
+        {FARM_GAMES.map((game) => (
+          <FarmCard key={game.id} game={game} />
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
 const WeeklyRanking = () => (
   <div id="ranking" className="panel scroll-mt-24">
     <h2 className="subheading mb-4">Ranking da semana</h2>
@@ -496,7 +622,7 @@ export default function Home() {
   const filterTitle = category ? categoryLabel(category) : `Resultados para “${query.trim()}”`;
 
   const playRandom = () => {
-    const game = GAMES[Math.floor(Math.random() * GAMES.length)];
+    const game = SOLO_GAMES[Math.floor(Math.random() * SOLO_GAMES.length)];
     window.location.href = game.gameLink;
   };
 
@@ -505,7 +631,7 @@ export default function Home() {
     setCategory(null);
   };
 
-  const topRated = GAMES.filter((g) => g.rating === 5);
+  const topRated = SOLO_GAMES.filter((g) => g.rating === 5);
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -530,9 +656,10 @@ export default function Home() {
             />
           )}
 
-          <Carousel id="novidades" title="Novidades" games={GAMES.filter((g) => g.isNew)} />
+          <Carousel id="novidades" title="Novidades" games={SOLO_GAMES.filter((g) => g.isNew)} />
           <Categories active={category} onSelect={setCategory} />
-          <Carousel id="jogos" title="Todos os jogos" games={GAMES} />
+          <Carousel id="jogos" title="Todos os jogos" games={SOLO_GAMES} />
+          <FarmSection />
           <Carousel id="favoritos" title="Mais bem avaliados" games={topRated} />
           <Community />
         </main>

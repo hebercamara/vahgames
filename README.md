@@ -27,7 +27,7 @@ src/
   components/GamePage.jsx  moldura comum das páginas de jogo
   services/firebase.js  configuração do Firebase (Realtime Database)
 public/
-  games/                jogos em HTML estático (Nitro Mania, A Fuga do Sonic, Arthur, Tetris, Pac-Man, 2048)
+  games/                jogos em HTML estático (Nitro Mania, A Fuga do Sonic, Arthur, Tetris, Pac-Man, 2048, Fazenda)
   images/               imagens do portal e dos jogos
 ```
 
@@ -53,3 +53,19 @@ npm run dev
 - Quebra-Tijolos: jogo próprio do VAH Games (`src/games/QuebraTijolos`).
 - 2048: [gabrielecirulli/2048](https://github.com/gabrielecirulli/2048) de Gabriele Cirulli (MIT), com tema
   visual VAH em `public/games/2048/style/vah.css`. Licença em `public/games/2048/LICENSE.txt`.
+- Fazenda (Nem que a Vaca Tussa!, Maria vai com as Outras e Ovelha Negra): hub de jogos em grupo do
+  repositório [Nem-que-a-Vaca-Tussa](https://github.com/hebercamara/Nem-que-a-Vaca-Tussa).
+
+## Atualizar a Fazenda
+
+`public/games/fazenda` é o build web do repositório Nem-que-a-Vaca-Tussa. Para atualizar:
+
+```bash
+cd ../Nem-que-a-Vaca-Tussa
+npm install
+npm run build:portal
+rm -rf ../vahgames/public/games/fazenda
+cp -r dist-portal ../vahgames/public/games/fazenda
+```
+
+Cada jogo abre direto com `/games/fazenda/index.html?jogo=vaca`, `?jogo=maria` ou `?jogo=ovelha`.
