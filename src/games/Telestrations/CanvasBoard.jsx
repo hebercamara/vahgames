@@ -89,17 +89,17 @@ const CanvasBoard = ({ wordToDraw, onFinishTurn }) => {
     return (
         <div className="flex flex-col items-center w-full max-w-4xl mx-auto">
             <div className="flex justify-between w-full mb-4 px-4 items-center">
-                <div className="bg-gray-800 px-4 py-2 rounded text-white">
-                    <span className="text-gray-400 text-sm">Palavra Secreta:</span>
+                <div className="bg-white/[0.07] px-4 py-2 rounded text-ink">
+                    <span className="text-muted text-sm">Palavra Secreta:</span>
                     <br />
-                    <span className="text-2xl font-bold text-yellow-400 uppercase tracking-widest">{wordToDraw}</span>
+                    <span className="text-2xl font-bold text-violet-bright uppercase tracking-widest">{wordToDraw}</span>
                 </div>
-                <div className={`text-4xl font-bold font-mono ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+                <div className={`text-4xl font-bold font-mono ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-ink'}`}>
                     {timeLeft}s
                 </div>
             </div>
 
-            <div className="relative border-8 border-yellow-900 rounded-lg shadow-2xl bg-[#1a1a1a]">
+            <div className="relative border-8 border-yellow-900 rounded-lg bg-[#1a1a1a]">
                 {/* Chalkboard Texture Effect */}
                 <canvas
                     ref={canvasRef}
@@ -120,22 +120,22 @@ const CanvasBoard = ({ wordToDraw, onFinishTurn }) => {
             <div className="flex gap-4 mt-6">
                 <button
                     onClick={() => { setColor('#ffffff'); setLineWidth(3); }}
-                    className={`w-12 h-12 rounded-full bg-white border-2 ${color === '#ffffff' ? 'border-green-500 scale-110' : 'border-gray-500'}`}
+                    className={`w-12 h-12 rounded-full bg-white border-2 ${color === '#ffffff' ? 'border-lime scale-110' : 'border-line'}`}
                     title="Giz Branco"
                 />
                 <button
                     onClick={() => { setColor('#FFD700'); setLineWidth(3); }}
-                    className={`w-12 h-12 rounded-full bg-yellow-400 border-2 ${color === '#FFD700' ? 'border-green-500 scale-110' : 'border-gray-500'}`}
+                    className={`w-12 h-12 rounded-full bg-yellow-400 border-2 ${color === '#FFD700' ? 'border-lime scale-110' : 'border-line'}`}
                     title="Giz Amarelo"
                 />
                 <button
                     onClick={() => { setColor('#FF6347'); setLineWidth(3); }}
-                    className={`w-12 h-12 rounded-full bg-red-500 border-2 ${color === '#FF6347' ? 'border-green-500 scale-110' : 'border-gray-500'}`}
+                    className={`w-12 h-12 rounded-full bg-red-500 border-2 ${color === '#FF6347' ? 'border-lime scale-110' : 'border-line'}`}
                     title="Giz Vermelho"
                 />
                 <button
                     onClick={() => { setColor('#2F4F4F'); setLineWidth(20); }} // Eraser is just drawing background color
-                    className={`w-12 h-12 rounded-full bg-gray-600 border-2 flex items-center justify-center ${color === '#2F4F4F' ? 'border-green-500 scale-110' : 'border-gray-500'}`}
+                    className={`w-12 h-12 rounded-full bg-gray-600 border-2 flex items-center justify-center ${color === '#2F4F4F' ? 'border-lime scale-110' : 'border-line'}`}
                     title="Apagador"
                 >
                     🧽
@@ -145,14 +145,14 @@ const CanvasBoard = ({ wordToDraw, onFinishTurn }) => {
 
                 <button
                     onClick={clearCanvas}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition"
+                    className="btn-ghost px-4"
                 >
                     Limpar Tudo
                 </button>
 
                 <button
                     onClick={handleFinish}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded transition ml-auto"
+                    className="btn-lime ml-auto px-6"
                 >
                     ENVIAR
                 </button>

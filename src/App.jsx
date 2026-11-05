@@ -2,23 +2,33 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import TelestrationsGame from './games/Telestrations/index';
-import PacmanGame from './games/Pacman/index';
+import XadrezGame from './games/Xadrez/index';
+import DamasGame from './games/Damas/index';
 
-// O antigo /tetris agora aponta para o Empilha Blocos (react-tetris), servido como página estática
-const RedirectToEmpilhaBlocos = () => {
-  window.location.replace('/games/react-tetris/index.html');
-  return null;
+// Jogos servidos como páginas estáticas em public/games
+const redirectTo = (url) => {
+  const Redirect = () => {
+    window.location.replace(url);
+    return null;
+  };
+  return Redirect;
 };
+// /tetris aponta para o Tetris (react-tetris, Apache-2.0)
+const RedirectToTetris = redirectTo('/games/react-tetris/index.html');
+// /pacman aponta para o Pac-Man (mumuy/pacman, MIT)
+const RedirectToPacman = redirectTo('/games/pacman/index.html');
 
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-900 font-sans antialiased text-white">
+      <div className="min-h-screen bg-canvas font-sans text-body antialiased">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/telestrations/*" element={<TelestrationsGame />} />
-          <Route path="/tetris" element={<RedirectToEmpilhaBlocos />} />
-          <Route path="/pacman" element={<PacmanGame />} />
+          <Route path="/tetris" element={<RedirectToTetris />} />
+          <Route path="/pacman" element={<RedirectToPacman />} />
+          <Route path="/xadrez" element={<XadrezGame />} />
+          <Route path="/damas" element={<DamasGame />} />
         </Routes>
       </div>
     </Router>
