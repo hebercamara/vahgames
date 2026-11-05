@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <!--
+    2048 — jogo original de Gabriele Cirulli (https://github.com/gabrielecirulli/2048), licenciado sob MIT
+    (veja LICENSE.txt). Modificações VAH Games: página e tema visual novos (style/vah.css), textos em português.
+  -->
+  <meta charset="utf-8">
+  <title>2048 · VAH Games</title>
+  <meta name="description" content="2048 — jogue grátis no portal VAH Games">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#0C0D14">
+  <link rel="icon" type="image/png" href="/images/site/logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800;900&family=Unbounded:wght@900&display=swap" rel="stylesheet">
+  <link href="style/main.css" rel="stylesheet" type="text/css">
+  <link href="style/vah.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+  <div class="vah-bar">
+    <a class="vah-btn" href="/">&larr; VAH Games</a>
+  </div>
+  <div class="container">
+    <div class="heading">
+      <h1 class="title">2048</h1>
+      <div class="scores-container">
+        <div class="score-container">0</div>
+        <div class="best-container">0</div>
+      </div>
+    </div>
+
+    <div class="above-game">
+      <p class="game-intro">Junte os números e chegue à peça <strong>2048!</strong></p>
+      <a class="restart-button">Novo jogo</a>
+    </div>
+
+    <div class="game-container">
+      <div class="game-message">
+        <p></p>
+        <div class="lower">
+	        <a class="keep-playing-button">Continuar</a>
+          <a class="retry-button">Tentar de novo</a>
+        </div>
+      </div>
+
+      <div class="grid-container">
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+      </div>
+
+      <div class="tile-container">
+
+      </div>
+    </div>
+
+    <p class="game-explanation">
+      <strong class="important">Como jogar:</strong> use as <strong>setas</strong> do teclado (ou deslize o dedo, no celular)
+      para mover as peças. Quando duas peças com o mesmo número se encostam, elas <strong>se juntam numa só!</strong>
+    </p>
+    <hr>
+    <p class="vah-credit">
+      Jogo original de <a href="https://github.com/gabrielecirulli/2048" target="_blank" rel="noopener">Gabriele Cirulli</a> (MIT),
+      baseado em 1024 da Veewo Studio e conceitualmente parecido com Threes, de Asher Vollmer.
+    </p>
+  </div>
+
+  <script src="js/bind_polyfill.js"></script>
+  <script src="js/classlist_polyfill.js"></script>
+  <script src="js/animframe_polyfill.js"></script>
+  <script src="js/keyboard_input_manager.js"></script>
+  <script src="js/html_actuator.js"></script>
+  <script src="js/grid.js"></script>
+  <script src="js/tile.js"></script>
+  <script src="js/local_storage_manager.js"></script>
+  <script src="js/game_manager.js"></script>
+  <script src="js/application.js"></script>
+</body>
+</html>

@@ -7,10 +7,11 @@ export default function GamePage({ title, actions, children }) {
   return (
     <div className="min-h-screen bg-canvas px-4 pb-10 pt-4 md:px-8">
       <header className="mx-auto mb-6 flex max-w-6xl items-center justify-between gap-3">
-        <Link to="/" className="btn-ghost px-4">
-          <span aria-hidden="true">←</span> VAH Games
+        <Link to="/" className="btn-ghost shrink-0 px-4" aria-label="Voltar ao VAH Games">
+          <span aria-hidden="true">←</span>
+          <span className="hidden sm:inline">VAH Games</span>
         </Link>
-        <h1 className="heading truncate">{title}</h1>
+        <h1 className="heading min-w-0 truncate text-[18px] sm:text-heading-sm">{title}</h1>
         <div className="flex shrink-0 items-center gap-2">{actions}</div>
       </header>
       <main className="mx-auto max-w-6xl">{children}</main>

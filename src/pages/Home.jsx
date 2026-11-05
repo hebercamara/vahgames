@@ -85,6 +85,27 @@ const GAMES = [
     tagline: 'Regra brasileira, contra o computador ou a dois.',
     isNew: true,
   },
+  {
+    id: 'quebra-tijolos',
+    title: 'Quebra-Tijolos',
+    image: '/images/site/capa-quebra-tijolos.svg',
+    rating: 5,
+    gameLink: '/quebra-tijolos',
+    category: 'arcade',
+    tagline: 'Rebata a bola e derrube todos os tijolos.',
+    isNew: true,
+  },
+  // 2048: gabrielecirulli/2048 (MIT) em public/games/2048
+  {
+    id: '2048',
+    title: '2048',
+    image: '/images/site/capa-2048.svg',
+    rating: 5,
+    gameLink: '/games/2048/index.html',
+    category: 'quebra-cabeca',
+    tagline: 'Junte os números até chegar ao 2048.',
+    isNew: true,
+  },
 ];
 
 // Cada categoria usa um dos gradientes de seção do DESIGN.md
