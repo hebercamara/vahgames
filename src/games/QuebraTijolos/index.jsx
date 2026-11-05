@@ -301,6 +301,7 @@ export default function QuebraTijolosGame() {
         if (g.lives <= 0) {
           g.status = 'over';
           g.message = 'Fim de jogo';
+          window.VAHRanking?.submit('quebra-tijolos', g.score);
         } else {
           g.balls = [newBall(p, g.speed)];
           g.status = 'ready';
@@ -311,6 +312,7 @@ export default function QuebraTijolosGame() {
         g.score += 100 * (g.level + 1);
         g.status = g.level + 1 >= LEVELS.length ? 'victory' : 'cleared';
         g.message = g.status === 'victory' ? 'Você venceu todas as fases! 🏆' : `Fase ${g.level + 1} completa!`;
+        if (g.status === 'victory') window.VAHRanking?.submit('quebra-tijolos', g.score);
         syncHud();
       }
     };
@@ -438,9 +440,14 @@ export default function QuebraTijolosGame() {
     <GamePage
       title="Quebra-Tijolos"
       actions={
+        <>
+        <button type="button" className="btn-ghost px-4" onClick={() => window.VAHRanking?.show('quebra-tijolos')}>
+          🏆<span className="hidden sm:inline">Ranking</span>
+        </button>
         <button type="button" className="btn-ghost px-4" onClick={togglePause} disabled={!['playing', 'paused'].includes(hud.status)}>
           {hud.status === 'paused' ? 'Continuar' : 'Pausar'}
         </button>
+        </>
       }
     >
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)] lg:justify-center">

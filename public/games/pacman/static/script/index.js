@@ -1034,6 +1034,11 @@
 	//结束画面
 	(function(){
 		var stage = game.createStage();
+		// VAH Games: ao chegar na tela final, oferece salvar a pontuação no ranking geral
+		stage.reset = function(){
+			Object.getPrototypeOf(this).reset.call(this);
+			if(window.VAHRanking){ window.VAHRanking.submit('pacman', _SCORE+50*Math.max(_LIFE-1,0)); }
+		};
 		//游戏结束
 		stage.createItem({
 			x:game.width/2,

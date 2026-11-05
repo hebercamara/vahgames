@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 // Layout segue DESIGN.md: canvas escuro, sidebar fixa de 68px, carrosséis
 // horizontais de cards, CTA lima em pílula e gradientes de seção.
@@ -160,14 +160,6 @@ const CATEGORIES = [
   { id: 'multijogador', label: 'Multijogador', gradient: 'bg-grad-violet' },
   { id: 'grupo', label: 'Em grupo', gradient: 'bg-grad-olive' },
 ];
-
-const RANKING = [
-  { player: 'Arthur Santos', score: 12890 },
-  { player: 'Vitor Santos', score: 12500 },
-  { player: 'Heber Câmara', score: 12300 },
-  { player: 'Elite99', score: 12600 },
-  { player: 'ProMaster', score: 11750 },
-].sort((a, b) => b.score - a.score);
 
 const categoryLabel = (id) => CATEGORIES.find((c) => c.id === id)?.label ?? '';
 
@@ -514,26 +506,88 @@ const FarmSection = () => (
   </section>
 );
 
-const WeeklyRanking = () => (
-  <div id="ranking" className="panel scroll-mt-24">
-    <h2 className="subheading mb-4">Ranking da semana</h2>
-    <ol className="flex flex-col gap-2">
-      {RANKING.map((item, index) => (
-        <li key={item.player} className="flex items-center gap-3 rounded-full bg-white/[0.05] py-2 pl-2 pr-4">
-          <span
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[14px] font-black ${
-              index === 0 ? 'bg-lime text-lime-ink' : 'bg-white/10 text-ink'
-            }`}
+// Ranking geral real (public/js/vah-ranking.js): melhor resultado de cada nome em cada jogo
+const RANKED_GAMES = [
+  ['tetris', 'Tetris'],
+  ['pacman', 'Pac-Man'],
+  ['2048', '2048'],
+  ['quebra-tijolos', 'Quebra-Tijolos'],
+  ['nitro-mania', 'Nitro Mania'],
+  ['fuga-do-sonic', 'A Fuga do Sonic'],
+  ['arthur', 'Arthur'],
+];
+
+const GeneralRanking = () => {
+  const [game, setGame] = useState(RANKED_GAMES[0][0]);
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    setData(null);
+    const load = () => {
+      if (!window.VAHRanking) return;
+      window.VAHRanking.top(game, 5).then((res) => alive && setData(res));
+    };
+    if (window.VAHRanking) load();
+    else window.addEventListener('load', load, { once: true });
+    return () => {
+      alive = false;
+      window.removeEventListener('load', load);
+    };
+  }, [game]);
+
+  const unit = game === 'arthur' ? 'fases' : 'pts';
+
+  return (
+    <div id="ranking" className="panel flex scroll-mt-24 flex-col">
+      <h2 className="subheading">Ranking geral</h2>
+      <p className="mb-3 text-body-md text-muted">Os melhores resultados de cada jogo.</p>
+      <div className="no-scrollbar -mx-5 mb-4 flex gap-2 overflow-x-auto px-5" role="tablist" aria-label="Jogo do ranking">
+        {RANKED_GAMES.map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={game === id}
+            onClick={() => setGame(id)}
+            className={`btn h-[34px] shrink-0 px-4 ${game === id ? 'bg-lime text-lime-ink' : 'bg-white/10 text-ink hover:bg-white/20'}`}
           >
-            {index + 1}
-          </span>
-          <span className="flex-1 truncate text-body-lg font-bold text-ink">{item.player}</span>
-          <span className="text-body-md font-extrabold text-violet-bright">{item.score.toLocaleString('pt-BR')}</span>
-        </li>
-      ))}
-    </ol>
-  </div>
-);
+            {label}
+          </button>
+        ))}
+      </div>
+      {!data ? (
+        <p className="text-body-md text-muted">Carregando…</p>
+      ) : data.entries.length === 0 ? (
+        <p className="text-body-md text-muted">Ninguém no ranking ainda. Jogue e seja o primeiro!</p>
+      ) : (
+        <ol className="flex flex-col gap-2">
+          {data.entries.map((item, index) => (
+            <li key={item.name} className="flex items-center gap-3 rounded-full bg-white/[0.05] py-2 pl-2 pr-4">
+              <span
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[14px] font-black ${
+                  index === 0 ? 'bg-lime text-lime-ink' : 'bg-white/10 text-ink'
+                }`}
+              >
+                {index + 1}
+              </span>
+              <span className="flex-1 truncate text-body-lg font-bold text-ink">{item.name}</span>
+              <span className="text-body-md font-extrabold text-violet-bright">
+                {item.score.toLocaleString('pt-BR')} {unit}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+      {data && !data.online && (
+        <p className="mt-3 text-caption text-muted">Ranking online indisponível: mostrando os resultados deste aparelho.</p>
+      )}
+      <button type="button" className="btn-ghost mt-4 self-start px-4" onClick={() => window.VAHRanking?.show(game)}>
+        Ver top 10
+      </button>
+    </div>
+  );
+};
 
 const Community = () => (
   <section id="comunidade" className="scroll-mt-24 px-4 md:px-8">
@@ -548,7 +602,7 @@ const Community = () => (
         </p>
         <button type="button" className="btn-light">Acesse o fórum</button>
       </div>
-      <WeeklyRanking />
+      <GeneralRanking />
     </div>
   </section>
 );

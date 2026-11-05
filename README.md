@@ -69,3 +69,17 @@ cp -r dist-portal ../vahgames/public/games/fazenda
 ```
 
 Cada jogo abre direto com `/games/fazenda/index.html?jogo=vaca`, `?jogo=maria` ou `?jogo=ovelha`.
+
+## Ranking geral
+
+`public/js/vah-ranking.js` guarda o melhor resultado de cada nome em cada jogo (Tetris, Pac-Man,
+2048, Quebra-Tijolos, Nitro Mania, A Fuga do Sonic e Arthur) no Firebase Realtime Database, em
+`/rankings/{jogo}/{nome}`. As regras de segurança estão em `database.rules.json`. Enquanto o banco
+não existir ou não responder, o ranking fica salvo só no aparelho de cada jogador.
+
+Para ligar o ranking online (uma vez), no console do Firebase, projeto `vah-games`:
+1. Realtime Database → Criar banco de dados (`us-central1`). A URL esperada é
+   `https://vah-games-default-rtdb.firebaseio.com` (se for outra, troque `DATABASE_URL` no arquivo acima).
+2. Aba Regras → colar `database.rules.json` → Publicar.
+
+O rascunho das salas online da Fazenda está em [`docs/salas-online.md`](docs/salas-online.md).

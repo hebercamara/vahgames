@@ -128,6 +128,9 @@ HTMLActuator.prototype.message = function (won) {
   var type    = won ? "game-won" : "game-over";
   var message = won ? "Você venceu!" : "Fim de jogo!";
 
+  // VAH Games: ranking geral ao perder (quem vence pode continuar jogando)
+  if (!won && window.VAHRanking) window.VAHRanking.submit("2048", this.score);
+
   this.messageContainer.classList.add(type);
   this.messageContainer.getElementsByTagName("p")[0].textContent = message;
 };

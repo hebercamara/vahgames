@@ -527,6 +527,7 @@
             gameOver = true;
             finalScoreDisplay.textContent = Math.floor(score);
             gameOverScreen.classList.remove('hidden');
+            if (window.VAHRanking) window.VAHRanking.submit('fuga-do-sonic', Math.floor(score));
             if (score > highScore) {
                 highScore = Math.floor(score);
                 localStorage.setItem('subwaySurfersHighScore', highScore);
@@ -632,5 +633,7 @@
             };
         }
     </script>
+<script src="/js/vah-ranking.js"></script>
+<script>VAHRanking.button("fuga-do-sonic");</script>
 </body>
 </html>

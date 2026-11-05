@@ -729,6 +729,7 @@
                 'Voltar ao Menu', showMenu
             );
             saveGameData();
+            if (window.VAHRanking) window.VAHRanking.submit('nitro-mania', Math.floor(score));
         }
 
         function completePhase() {
@@ -1134,5 +1135,7 @@
             });
         }
     </script>
+<script src="/js/vah-ranking.js"></script>
+<script>VAHRanking.button("nitro-mania");</script>
 </body>
 </html>

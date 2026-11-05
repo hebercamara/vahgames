@@ -1,0 +1,19 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rankings": {
+      "$game": {
+        ".read": "$game.matches(/^(tetris|pacman|2048|quebra-tijolos|nitro-mania|fuga-do-sonic|arthur)$/)",
+        "$player": {
+          ".write": "$game.matches(/^(tetris|pacman|2048|quebra-tijolos|nitro-mania|fuga-do-sonic|arthur)$/) && $player.matches(/^[a-z0-9-]{1,40}$/) && newData.exists() && (!data.exists() || newData.child('score').val() > data.child('score').val())",
+          ".validate": "newData.hasChildren(['name', 'score', 'ts'])",
+          "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20" },
+          "score": { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 100000000" },
+          "ts": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+          "$other": { ".validate": false }
+        }
+      }
+    }
+  }
+}
