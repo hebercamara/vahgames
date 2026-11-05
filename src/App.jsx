@@ -13,7 +13,7 @@ const RedirectToEmpilhaBlocos = () => {
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-900 font-sans antialiased text-white">
+      <div className="min-h-screen bg-canvas font-sans text-body antialiased">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/telestrations/*" element={<TelestrationsGame />} />

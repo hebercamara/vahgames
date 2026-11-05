@@ -46,15 +46,15 @@ const Lobby = ({ onGameStart, onJoinRoom }) => {
     }
 
     return (
-        <div className="flex flex-col items-center w-full max-w-md mx-auto p-6 bg-gray-800 rounded-xl shadow-2xl border border-gray-700">
-            <h2 className="text-3xl font-bold text-green-400 mb-6 font-mono">LOBBY</h2>
+        <div className="flex flex-col items-center w-full max-w-md mx-auto p-6 bg-white/[0.07] rounded-xs border border-line">
+            <h2 className="heading mb-6">LOBBY</h2>
 
             {!joined ? (
                 <div className="w-full flex flex-col gap-4">
                     <input
                         type="text"
                         placeholder="Seu Nome"
-                        className="w-full p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                        className="input"
                         value={playerName}
                         onChange={(e) => setPlayerName(e.target.value)}
                     />
@@ -62,36 +62,36 @@ const Lobby = ({ onGameStart, onJoinRoom }) => {
                     <div className="flex gap-2">
                         <button
                             onClick={createRoom}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition"
+                            className="btn-lime flex-1"
                         >
                             Criar Sala Online
                         </button>
                     </div>
 
                     <div className="relative flex py-2 items-center">
-                        <div className="flex-grow border-t border-gray-600"></div>
-                        <span className="flex-shrink mx-4 text-gray-400 text-sm">JOGO LOCAL</span>
-                        <div className="flex-grow border-t border-gray-600"></div>
+                        <div className="flex-grow border-t border-line"></div>
+                        <span className="flex-shrink mx-4 text-muted text-sm">JOGO LOCAL</span>
+                        <div className="flex-grow border-t border-line"></div>
                     </div>
 
-                    <div className="bg-gray-700/50 p-4 rounded-lg flex flex-col gap-3">
+                    <div className="bg-white/[0.05] p-4 rounded-lg flex flex-col gap-3">
                         <div className="flex justify-between items-center">
-                            <label className="text-gray-300">Jogadores:</label>
+                            <label className="text-body">Jogadores:</label>
                             <input
                                 type="number"
                                 min="2"
                                 max="20"
                                 value={localPlayerCount}
                                 onChange={(e) => setLocalPlayerCount(parseInt(e.target.value))}
-                                className="w-16 p-2 bg-gray-600 rounded text-center text-white"
+                                className="w-16 h-10 rounded-full bg-white/10 text-center text-ink"
                             />
                         </div>
                         <div className="flex justify-between items-center">
-                            <label className="text-gray-300">Tema:</label>
+                            <label className="text-body">Tema:</label>
                             <select
                                 value={selectedTheme}
                                 onChange={(e) => setSelectedTheme(e.target.value)}
-                                className="p-2 bg-gray-600 rounded text-white text-sm"
+                                className="h-10 rounded-full bg-white/10 px-3 text-ink text-[14px]"
                             >
                                 <option value="Diversos">Diversos</option>
                                 <option value="Natal">Natal</option>
@@ -102,7 +102,7 @@ const Lobby = ({ onGameStart, onJoinRoom }) => {
                         </div>
                         <button
                             onClick={startLocalGame}
-                            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg transition mt-2"
+                            className="btn-light mt-2 h-10 w-full"
                         >
                             Jogar Local (Pass & Play)
                         </button>
@@ -110,22 +110,22 @@ const Lobby = ({ onGameStart, onJoinRoom }) => {
 
 
                     <div className="relative flex py-2 items-center">
-                        <div className="flex-grow border-t border-gray-600"></div>
-                        <span className="flex-shrink mx-4 text-gray-400 text-sm">JOGO ONLINE</span>
-                        <div className="flex-grow border-t border-gray-600"></div>
+                        <div className="flex-grow border-t border-line"></div>
+                        <span className="flex-shrink mx-4 text-muted text-sm">JOGO ONLINE</span>
+                        <div className="flex-grow border-t border-line"></div>
                     </div>
 
                     <div className="flex gap-2">
                         <input
                             type="text"
                             placeholder="Código da Sala"
-                            className="flex-1 p-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            className="input flex-1"
                             value={roomId}
                             onChange={(e) => setRoomId(e.target.value.toUpperCase())}
                         />
                         <button
                             onClick={joinRoom}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition"
+                            className="btn-ghost px-6"
                         >
                             Entrar
                         </button>
@@ -133,16 +133,16 @@ const Lobby = ({ onGameStart, onJoinRoom }) => {
                 </div>
             ) : (
                 <div className="w-full">
-                    <div className="bg-gray-900 p-4 rounded-lg mb-6 border border-gray-700">
-                        <p className="text-gray-400 text-sm mb-1">Código da Sala:</p>
-                        <p className="text-2xl font-mono text-yellow-400 tracking-wider select-all">{roomId}</p>
+                    <div className="bg-canvas p-4 rounded-lg mb-6 border border-line">
+                        <p className="text-muted text-sm mb-1">Código da Sala:</p>
+                        <p className="text-2xl font-mono text-violet-bright tracking-wider select-all">{roomId}</p>
                     </div>
 
-                    <h3 className="text-xl text-white mb-4 border-b border-gray-700 pb-2">Jogadores ({players.length})</h3>
+                    <h3 className="text-xl text-ink mb-4 border-b border-line pb-2">Jogadores ({players.length})</h3>
                     <ul className="space-y-2 mb-8 max-h-60 overflow-y-auto">
                         {players.map((p, i) => (
-                            <li key={i} className="flex items-center gap-2 text-lg text-gray-200 bg-gray-700/50 p-2 rounded">
-                                <span className={`w-3 h-3 rounded-full ${i === 0 ? 'bg-yellow-400' : 'bg-green-400'}`}></span>
+                            <li key={i} className="flex items-center gap-2 text-lg text-body bg-white/[0.05] p-2 rounded">
+                                <span className={`w-3 h-3 rounded-full ${i === 0 ? 'bg-lime' : 'bg-violet-bright'}`}></span>
                                 {p.name} {i === 0 && '👑'}
                             </li>
                         ))}
@@ -151,12 +151,12 @@ const Lobby = ({ onGameStart, onJoinRoom }) => {
                     {isHost ? (
                         <button
                             onClick={startGame}
-                            className="w-full bg-green-500 hover:bg-green-600 text-gray-900 font-bold py-4 rounded-lg shadow-lg transform hover:-translate-y-1 transition text-xl"
+                            className="w-full btn-lime h-12 w-full text-[16px] font-extrabold"
                         >
                             INICIAR JOGO ONLINE
                         </button>
                     ) : (
-                        <div className="text-center text-gray-400 italic animate-pulse">
+                        <div className="text-center text-muted italic animate-pulse">
                             Aguardando o anfitrião iniciar...
                         </div>
                     )}

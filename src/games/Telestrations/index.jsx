@@ -132,8 +132,8 @@ const TelestrationsGame = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-8">
-            <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 mb-8 font-sans drop-shadow-lg">
+        <div className="min-h-screen bg-canvas text-ink flex flex-col items-center py-8">
+            <h1 className="font-display text-[28px] md:text-[40px] font-black uppercase text-ink mb-8">
                 LOUSA MÁGICA
             </h1>
 
@@ -142,13 +142,13 @@ const TelestrationsGame = () => {
             )}
 
             {gameState === 'INTERMISSION' && (
-                <div className="flex flex-col items-center justify-center p-8 bg-gray-800 rounded-xl shadow-2xl border-4 border-yellow-500 animate-pulse">
-                    <h2 className="text-4xl font-bold text-yellow-400 mb-4">TEMPO ESGOTADO!</h2>
-                    <p className="text-xl text-gray-300 mb-8">Passe o dispositivo para o próximo jogador.</p>
+                <div className="flex flex-col items-center justify-center p-8 bg-white/[0.07] rounded-xs border-2 border-lime">
+                    <h2 className="text-4xl font-bold text-violet-bright mb-4">TEMPO ESGOTADO!</h2>
+                    <p className="text-xl text-body mb-8">Passe o dispositivo para o próximo jogador.</p>
                     <div className="text-6xl mb-8">🔄📱</div>
                     <button
                         onClick={startNextLocalTurn}
-                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg text-2xl shadow-lg transform hover:scale-105 transition"
+                        className="btn-lime h-12 px-6 text-[16px] font-extrabold"
                     >
                         PRÓXIMO JOGADOR: CLIQUE PARA INICIAR
                     </button>
@@ -156,11 +156,11 @@ const TelestrationsGame = () => {
             )}
 
             {gameState === 'REVEAL_MOMENT' && (
-                <div className="flex flex-col items-center justify-center p-8 bg-gray-900 rounded-xl max-w-2xl text-center">
-                    <h2 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-8 font-sans">
+                <div className="flex flex-col items-center justify-center p-8 bg-canvas rounded-xs max-w-2xl text-center">
+                    <h2 className="font-display text-[28px] md:text-[36px] font-black uppercase text-lime mb-8">
                         FIM DE JOGO!
                     </h2>
-                    <p className="text-3xl text-white mb-12 font-light">
+                    <p className="text-body-xl text-body mb-12">
                         Todos já jogaram. Agora é a hora da verdade...
                     </p>
                     <div className="mb-12">
@@ -168,11 +168,11 @@ const TelestrationsGame = () => {
                     </div>
                     <button
                         onClick={showLocalResults}
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-5 px-10 rounded-full text-3xl shadow-2xl transform hover:scale-110 transition-all duration-300 border-4 border-white/20"
+                        className="btn-lime h-12 px-8 text-[16px] font-extrabold hover:scale-105"
                     >
                         REVELAR RESULTADO
                     </button>
-                    <p className="mt-6 text-gray-500 text-sm">Junte todos para ver!</p>
+                    <p className="mt-6 text-muted text-sm">Junte todos para ver!</p>
                 </div>
             )}
 
