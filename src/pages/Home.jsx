@@ -48,21 +48,42 @@ const GAMES = [
   {
     id: 'tetris',
     title: 'Tetris',
-    image: '/images/site/capa-empilha-blocos.svg',
+    image: '/images/site/capa-tetris.svg',
     rating: 5,
     gameLink: '/games/react-tetris/index.html',
     category: 'quebra-cabeca',
     tagline: 'Encaixe as peças e limpe as linhas.',
+  },
+  // Pac-Man: mumuy/pacman (MIT) em public/games/pacman
+  {
+    id: 'pacman',
+    title: 'Pac-Man',
+    image: '/images/site/capa-pacman.svg',
+    rating: 5,
+    gameLink: '/games/pacman/index.html',
+    category: 'arcade',
+    tagline: 'Coma os pontos e fuja dos fantasmas.',
     isNew: true,
   },
   {
-    id: 'labirinto',
-    title: 'Labirinto',
-    image: '/images/site/capa-labirinto.svg',
+    id: 'xadrez',
+    title: 'Xadrez',
+    image: '/images/site/capa-xadrez.svg',
     rating: 5,
-    gameLink: '/pacman',
-    category: 'arcade',
-    tagline: 'Coma os pontos e fuja dos fantasmas.',
+    gameLink: '/xadrez',
+    category: 'tabuleiro',
+    tagline: 'Desafie o computador ou um amigo.',
+    isNew: true,
+  },
+  {
+    id: 'damas',
+    title: 'Damas',
+    image: '/images/site/capa-damas.svg',
+    rating: 5,
+    gameLink: '/damas',
+    category: 'tabuleiro',
+    tagline: 'Regra brasileira, contra o computador ou a dois.',
+    isNew: true,
   },
 ];
 
@@ -73,6 +94,7 @@ const CATEGORIES = [
   { id: 'aventura', label: 'Aventura', gradient: 'bg-grad-teal' },
   { id: 'arcade', label: 'Arcade', gradient: 'bg-grad-olive' },
   { id: 'quebra-cabeca', label: 'Quebra-cabeça', gradient: 'bg-grad-green' },
+  { id: 'tabuleiro', label: 'Tabuleiro', gradient: 'bg-grad-blue' },
   { id: 'multijogador', label: 'Multijogador', gradient: 'bg-grad-violet' },
 ];
 
@@ -219,7 +241,7 @@ const Hero = ({ game }) => (
             Jogue grátis,<br />direto no navegador
           </h1>
           <p className="max-w-md text-body-lg text-body">
-            Corrida, aventura, blocos, labirinto e desenho com os amigos. Sem instalar nada — é só clicar e jogar.
+            Corrida, aventura, arcade, xadrez, damas e desenho com os amigos. Sem instalar nada — é só clicar e jogar.
           </p>
           <div className="flex flex-wrap gap-3">
             <a href={game.gameLink} className="btn-lime px-5">
@@ -487,6 +509,7 @@ export default function Home() {
             />
           )}
 
+          <Carousel id="novidades" title="Novidades" games={GAMES.filter((g) => g.isNew)} />
           <Categories active={category} onSelect={setCategory} />
           <Carousel id="jogos" title="Todos os jogos" games={GAMES} />
           <Carousel id="favoritos" title="Mais bem avaliados" games={topRated} />

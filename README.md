@@ -23,14 +23,15 @@ Os workflows ficam em `.github/workflows/`. A chave de acesso ao Firebase é o s
 ```
 src/
   pages/Home.jsx        página inicial (galeria, ranking, comunidade)
-  games/                jogos em React (Pacman, Lousa Mágica/Telestrations, ...)
+  games/                jogos em React (Xadrez, Damas, Lousa Mágica/Telestrations)
+  components/GamePage.jsx  moldura comum das páginas de jogo
   services/firebase.js  configuração do Firebase (Realtime Database)
 public/
-  games/                jogos em HTML estático (Nitro Mania, A Fuga do Sonic, Arthur, Tetris)
+  games/                jogos em HTML estático (Nitro Mania, A Fuga do Sonic, Arthur, Tetris, Pac-Man)
   images/               imagens do portal e dos jogos
 ```
 
-Para adicionar um jogo à galeria, inclua um item na lista `games` em `src/pages/Home.jsx`.
+Para adicionar um jogo à galeria, inclua um item na lista `GAMES` em `src/pages/Home.jsx`.
 
 ## Rodar localmente (opcional)
 
@@ -43,3 +44,9 @@ npm run dev
 
 - Tetris: baseado em [react-tetris](https://github.com/chvin/react-tetris) de Chvin (Apache-2.0).
   Detalhes em `public/games/react-tetris/LICENSE-NOTICE.txt`.
+- Pac-Man: [mumuy/pacman](https://github.com/mumuy/pacman) de Haole Zheng (MIT), com fonte
+  Press Start 2P (SIL Open Font License 1.1). Licença em `public/games/pacman/LICENSE`.
+- Xadrez: regras com [chess.js](https://github.com/jhlywa/chess.js) (BSD-2-Clause), tabuleiro com
+  [react-chessboard](https://github.com/Clariity/react-chessboard) (MIT) e computador com
+  [js-chess-engine](https://github.com/josefjadrny/js-chess-engine) (MIT).
+- Damas: implementação própria com a regra brasileira (`src/games/Damas/logic.js`).
