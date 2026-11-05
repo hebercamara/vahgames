@@ -8,10 +8,76 @@
         "$player": {
           ".write": "$game.matches(/^(tetris|pacman|2048|quebra-tijolos|nitro-mania|fuga-do-sonic|arthur)$/) && $player.matches(/^[a-z0-9-]{1,40}$/) && newData.exists() && (!data.exists() || newData.child('score').val() > data.child('score').val())",
           ".validate": "newData.hasChildren(['name', 'score', 'ts'])",
-          "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20" },
-          "score": { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 100000000" },
-          "ts": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
-          "$other": { ".validate": false }
+          "name": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20"
+          },
+          "score": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 100000000"
+          },
+          "ts": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "codigos": {
+      "$codigo": {
+        ".read": "auth != null",
+        ".write": "auth != null && !data.exists() && newData.exists() && $codigo.matches(/^[A-Z]{5}$/)"
+      }
+    },
+    "salas": {
+      "$sala": {
+        ".write": "auth != null && !data.exists() && newData.child('meta/anfitriao').val() === auth.uid && root.child('codigos').child($sala).exists()",
+        "meta": {
+          ".read": "auth != null",
+          ".write": "auth != null && data.exists() && data.child('anfitriao').val() === auth.uid",
+          "anfitriao": {
+            ".write": "auth != null && root.child('salas').child($sala).child('jogadores').child(auth.uid).exists() && newData.val() === auth.uid"
+          }
+        },
+        "jogadores": {
+          ".read": "auth != null",
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid",
+            "nome": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20"
+            },
+            "avatar": {
+              ".validate": "newData.isNumber()"
+            }
+          }
+        },
+        "estado": {
+          ".read": "auth != null && root.child('salas').child($sala).child('jogadores').child(auth.uid).exists()",
+          ".write": "auth != null && root.child('salas').child($sala).child('meta/anfitriao').val() === auth.uid"
+        },
+        "entradas": {
+          ".write": "auth != null && root.child('salas').child($sala).child('meta/anfitriao').val() === auth.uid",
+          "$rodada": {
+            ".read": "auth != null && root.child('salas').child($sala).child('meta/anfitriao').val() === auth.uid",
+            "$uid": {
+              ".read": "auth != null && auth.uid === $uid",
+              ".write": "auth != null && auth.uid === $uid && root.child('salas').child($sala).child('jogadores').child(auth.uid).exists()"
+            }
+          }
+        },
+        "propostas": {
+          ".read": "auth != null && root.child('salas').child($sala).child('jogadores').child(auth.uid).exists()",
+          ".write": "auth != null && root.child('salas').child($sala).child('meta/anfitriao').val() === auth.uid",
+          "$rodada": {
+            "$id": {
+              ".write": "auth != null && root.child('salas').child($sala).child('jogadores').child(auth.uid).exists() && !data.exists() && newData.child('autor').val() === auth.uid",
+              "votos": {
+                "$uid": {
+                  ".write": "auth != null && auth.uid === $uid && root.child('salas').child($sala).child('jogadores').child(auth.uid).exists()"
+                }
+              }
+            }
+          }
         }
       }
     }
