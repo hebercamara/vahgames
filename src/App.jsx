@@ -4,8 +4,8 @@ import Home from './pages/Home';
 import TelestrationsGame from './games/Telestrations/index';
 import PacmanGame from './games/Pacman/index';
 
-// O antigo /tetris agora aponta para o Empilha Blocos (react-tetris), servido como página estática
-const RedirectToEmpilhaBlocos = () => {
+// /tetris aponta para o Tetris (react-tetris), servido como página estática
+const RedirectToTetris = () => {
   window.location.replace('/games/react-tetris/index.html');
   return null;
 };
@@ -17,7 +17,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/telestrations/*" element={<TelestrationsGame />} />
-          <Route path="/tetris" element={<RedirectToEmpilhaBlocos />} />
+          <Route path="/tetris" element={<RedirectToTetris />} />
           <Route path="/pacman" element={<PacmanGame />} />
         </Routes>
       </div>

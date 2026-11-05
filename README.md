@@ -26,7 +26,7 @@ src/
   games/                jogos em React (Pacman, Lousa Mágica/Telestrations, ...)
   services/firebase.js  configuração do Firebase (Realtime Database)
 public/
-  games/                jogos em HTML estático (Nitro Mania, A Fuga do Sonic, Arthur, Empilha Blocos)
+  games/                jogos em HTML estático (Nitro Mania, A Fuga do Sonic, Arthur, Tetris)
   images/               imagens do portal e dos jogos
 ```
 
@@ -41,5 +41,5 @@ npm run dev
 
 ## Créditos
 
-- Empilha Blocos: baseado em [react-tetris](https://github.com/chvin/react-tetris) de Chvin (Apache-2.0).
+- Tetris: baseado em [react-tetris](https://github.com/chvin/react-tetris) de Chvin (Apache-2.0).
   Detalhes em `public/games/react-tetris/LICENSE-NOTICE.txt`.

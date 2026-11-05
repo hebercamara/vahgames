@@ -44,10 +44,10 @@ const GAMES = [
     category: 'multijogador',
     tagline: 'Desenhe, adivinhe e ria com os amigos.',
   },
-  // Empilha Blocos: versão compilada do react-tetris (chvin, Apache-2.0) em public/games/react-tetris
+  // Tetris: versão compilada do react-tetris (chvin, Apache-2.0) em public/games/react-tetris
   {
-    id: 'empilha-blocos',
-    title: 'Empilha Blocos',
+    id: 'tetris',
+    title: 'Tetris',
     image: '/images/site/capa-empilha-blocos.svg',
     rating: 5,
     gameLink: '/games/react-tetris/index.html',
