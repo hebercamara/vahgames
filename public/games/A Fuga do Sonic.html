@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrida Animal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #388E3C; /* Fundo verde folha mais escuro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Previne barras de rolagem */
+        }
+        .game-container {
+            background-color: #4CAF50; /* Fundo verde folha ligeiramente mais claro para o contêiner */
+            border-radius: 1rem; /* Cantos arredondados */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            max-width: 90vw;
+            width: 400px; /* Largura fixa para a área do jogo */
+        }
+        canvas {
+            background-color: #66BB6A; /* Fundo do mundo do jogo (um verde um pouco mais claro para contraste) */
+            border-radius: 0.75rem;
+            display: block;
+            touch-action: none; /* Desabilita ações de toque padrão como rolagem */
+            width: 100%; /* Torna o canvas responsivo dentro do seu contêiner */
+            height: 500px; /* Altura fixa para a área do jogo */
+            margin-bottom: 1rem;
+        }
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0 0.5rem;
+            margin-bottom: 1rem;
+            color: #e2e8f0; /* Cor de texto clara */
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        .game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #e2e8f0;
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            z-index: 10;
+        }
+        .hidden {
+            display: none;
+        }
+        .restart-button {
+            background-color: #4299e1; /* Azul */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .restart-button:hover {
+            background-color: #3182ce; /* Azul mais escuro */
+            transform: translateY(-2px);
+        }
+        .restart-button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .instructions {
+            color: #cbd5e0;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #e2e8f0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-info">
+            <div id="score">Pontuação: 0</div>
+            <div id="high-score">Recorde: 0</div>
+        </div>
+        <canvas id="gameCanvas" width="360" height="500"></canvas>
+        <div id="gameOverScreen" class="game-over-screen hidden">
+            <p>Fim de Jogo!</p>
+            <p>Sua Pontuação: <span id="finalScore">0</span></p>
+            <button id="restartButton" class="restart-button">Jogar Novamente</button>
+        </div>
+        <div id="loadingScreen" class="loading-screen">
+            <p>Carregando recursos...</p>
+        </div>
+        <div class="instructions">
+            <p>Deslize para cima para pular.</p>
+            <p>Deslize para os lados para mudar de faixa.</p>
+            <p>Use as setas do teclado para jogar no desktop.</p>
+            <p>No desktop, clique e arraste para pular ou mudar de faixa.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase imports (MANDATORY, even if not used for persistence in this game)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, where, addDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase (MANDATORY)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth, userId;
+        let isAuthReady = false;
+
+        // Initialize Firebase and authenticate
+        async function initializeFirebase() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase: User authenticated:", userId);
+                    } else {
+                        console.log("Firebase: User not authenticated. Attempting anonymous authentication...");
+                        try {
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                            userId = auth.currentUser?.uid || crypto.randomUUID(); // Fallback for anonymous
+                            console.log("Firebase: Anonymous/custom authentication successful. User ID:", userId);
+                        } catch (error) {
+                            console.error("Firebase: Authentication error:", error);
+                            userId = crypto.randomUUID(); // Fallback if auth fails
+                        }
+                    }
+                    isAuthReady = true;
+                    // You can now safely perform Firestore operations here, if needed.
+                    // For this game, we are not using Firestore for persistence.
+                });
+            } catch (error) {
+                console.error("Firebase: Error initializing Firebase:", error);
+                userId = crypto.randomUUID(); // Fallback if init fails
+                isAuthReady = true;
+            }
+        }
+
+        // Call Firebase initialization
+        initializeFirebase();
+
+
+        // --- Game Logic ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const highScoreDisplay = document.getElementById('high-score');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const restartButton = document.getElementById('restartButton');
+        const loadingScreen = document.getElementById('loadingScreen');
+
+        let player;
+        let chaser;
+        let obstacles = [];
+        let score = 0;
+        let highScore = localStorage.getItem('subwaySurfersHighScore') || 0;
+        let gameOver = false;
+        let gameSpeed = 5; // Initial speed
+        const laneWidth = canvas.width / 3; // 3 lanes
+        const playerWidth = 60; // Adjusted for Sonic size
+        const playerHeight = 60; // Adjusted for Sonic size
+        const chaserWidth = 50;
+        const chaserHeight = 70;
+        const jumpSpeed = 20; // Increased for higher and faster jump
+        const gravity = 1; // Increased for faster descent after jump peak
+        let obstacleSpawnInterval = 1000; // milliseconds - now dynamic
+        const minObstacleSpawnInterval = 400; // Minimum interval to prevent impossible spawns
+        const intervalReductionRate = 2; // How much interval reduces per score point (adjust for difficulty)
+        let lastObstacleSpawnTime = 0;
+
+        // Game Images
+        const sonicRunFrames = [
+            new Image(),
+            new Image()
+        ];
+        const roadImage = new Image();
+        const smallObstacleImage = new Image();
+        const largeObstacleImage = new Image();
+
+        // Setting direct links for images
+        sonicRunFrames[0].src = '/images/fuga-do-sonic/Sonic-Running-1.png';
+        sonicRunFrames[1].src = '/images/fuga-do-sonic/Sonic-Running-2.png';
+        roadImage.src = '/images/fuga-do-sonic/Estrada.png';
+        smallObstacleImage.src = '/images/fuga-do-sonic/Obstaculo-pequeno.png';
+        largeObstacleImage.src = '/images/fuga-do-sonic/Obstaculo-grande.png';
+
+        let imagesLoaded = 0;
+        const allImages = [
+            ...sonicRunFrames,
+            roadImage,
+            smallObstacleImage,
+            largeObstacleImage
+        ];
+        const totalImages = allImages.length;
+
+        function loadImage(image) {
+            return new Promise((resolve, reject) => {
+                image.onload = () => {
+                    imagesLoaded++;
+                    if (imagesLoaded === totalImages) {
+                        loadingScreen.classList.add('hidden');
+                        initGame();
+                        requestAnimationFrame(gameLoop);
+                    }
+                    resolve();
+                };
+                image.onerror = () => {
+                    console.error("Error loading image:", image.src);
+                    imagesLoaded++;
+                    if (imagesLoaded === totalImages) {
+                        loadingScreen.classList.add('hidden');
+                        initGame();
+                        requestAnimationFrame(gameLoop);
+                    }
+                    reject();
+                };
+            });
+        }
+
+        // Load all images
+        Promise.all(allImages.map(loadImage)).catch(() => {
+            console.warn("Some images could not be loaded. The game might not display all assets.");
+        });
+
+        // Road scrolling position
+        let roadY1 = 0;
+        let roadY2 = -canvas.height; // Start the second road image above the canvas
+
+
+        // Player Object (Sonic)
+        function Player() {
+            this.width = playerWidth;
+            this.height = playerHeight;
+            this.lane = 1; // 0: left, 1: center, 2: right
+            this.x = this.lane * laneWidth + (laneWidth - this.width) / 2;
+            this.y = canvas.height - this.height - 10; // Start at bottom
+            this.velocityY = 0;
+            this.isJumping = false;
+            this.frameIndex = 0; // Current frame index for animation
+            this.animationSpeed = 8; // Animation speed (lower = faster)
+            this.frameCounter = 0; // Counter to control animation speed
+
+            this.draw = function() {
+                // Draw Sonic image if loaded, otherwise draw nothing
+                if (sonicRunFrames[this.frameIndex].complete && sonicRunFrames[this.frameIndex].naturalWidth !== 0) {
+                    ctx.drawImage(sonicRunFrames[this.frameIndex], this.x, this.y, this.width, this.height);
+                } else {
+                    // Fallback visual: draw a blue rectangle if image fails to load
+                    ctx.fillStyle = '#0000FF';
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+            };
+
+            this.update = function() {
+                // Apply gravity if jumping
+                if (this.isJumping) {
+                    this.y += this.velocityY;
+                    this.velocityY += gravity;
+
+                    // Land on the ground
+                    if (this.y >= canvas.height - this.height - 10) {
+                        this.y = canvas.height - this.height - 10;
+                        this.isJumping = false;
+                        this.velocityY = 0;
+                    }
+                }
+
+                // Running animation
+                this.frameCounter++;
+                if (this.frameCounter >= this.animationSpeed) {
+                    this.frameIndex = (this.frameIndex + 1) % sonicRunFrames.length;
+                    this.frameCounter = 0;
+                }
+            };
+
+            this.jump = function() {
+                if (!this.isJumping) {
+                    this.isJumping = true;
+                    this.velocityY = -jumpSpeed;
+                }
+            };
+
+            this.changeLane = function(direction) { // -1 for left, 1 for right
+                this.lane += direction;
+                if (this.lane < 0) this.lane = 0;
+                if (this.lane > 2) this.lane = 2;
+                this.x = this.lane * laneWidth + (laneWidth - this.width) / 2;
+            };
+        }
+
+        // Chaser Object (Dog) - Kept as solid color
+        function Chaser() {
+            this.width = chaserWidth;
+            this.height = chaserHeight;
+            this.x = canvas.width / 2 - this.width / 2; // Always in the middle lane behind
+            this.y = canvas.height - this.height + 50; // Slightly behind the player
+            this.color = '#a0aec0'; // Dog color (gray)
+
+            this.draw = function() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                // Simple dog ears
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width / 4, this.y);
+                ctx.lineTo(this.x, this.y - this.height / 5);
+                ctx.lineTo(this.x + this.width / 2, this.y - this.height / 10);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width - this.width / 4, this.y);
+                ctx.lineTo(this.x + this.width, this.y - this.height / 5);
+                ctx.lineTo(this.x + this.width / 2, this.y - this.height / 10);
+                ctx.fill();
+            };
+
+            this.update = function() {
+                // Chaser moves forward at a slightly slower pace than the game speed
+                // or just stays relative to the player's position
+                // For simplicity, we'll keep its Y static relative to the canvas bottom
+            };
+        }
+
+        // Obstacle Object
+        function Obstacle(lane, type) {
+            this.width = (type === 'tall') ? 80 : 60; // Adjust width for image
+            this.height = (type === 'tall') ? 80 : 40; // Adjust height for image
+            this.lane = lane;
+            this.x = this.lane * laneWidth + (laneWidth - this.width) / 2;
+            this.y = -this.height; // Start off-screen at the top
+            this.type = type; // Store type to choose correct image
+
+            this.draw = function() {
+                let imageToDraw;
+                if (this.type === 'short') {
+                    imageToDraw = smallObstacleImage;
+                } else {
+                    imageToDraw = largeObstacleImage;
+                }
+
+                if (imageToDraw.complete && imageToDraw.naturalWidth !== 0) {
+                    ctx.drawImage(imageToDraw, this.x, this.y, this.width, this.height);
+                } else {
+                    // Fallback visual: draw a brown rectangle if image fails to load
+                    ctx.fillStyle = '#8b4513';
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+            };
+
+            this.update = function() {
+                this.y += gameSpeed; // Move down the screen
+            };
+        }
+
+        function initGame() {
+            player = new Player();
+            chaser = new Chaser();
+            obstacles = [];
+            score = 0;
+            gameOver = false;
+            gameSpeed = 5;
+            obstacleSpawnInterval = 1000; // Reset interval
+            lastObstacleSpawnTime = 0;
+            roadY1 = 0; // Reset road position
+            roadY2 = -canvas.height; // Reset road position
+            updateScoreDisplay();
+            highScoreDisplay.textContent = `Recorde: ${highScore}`;
+            gameOverScreen.classList.add('hidden');
+        }
+
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = `Pontuação: ${Math.floor(score)}`;
+        }
+
+        function checkCollision(player, obstacle) {
+            // Simple AABB collision detection
+            return player.x < obstacle.x + obstacle.width &&
+                   player.x + player.width > obstacle.x &&
+                   player.y < obstacle.y + obstacle.height &&
+                   player.y + player.height > obstacle.y;
+        }
+
+        function gameLoop(currentTime) {
+            if (gameOver) return;
+
+            // Update
+            player.update();
+            chaser.update();
+            score += 0.1; // Increase score over time
+            gameSpeed += 0.001; // Increased acceleration rate
+
+            // Update road scrolling
+            roadY1 += gameSpeed;
+            roadY2 += gameSpeed;
+
+            if (roadY1 >= canvas.height) {
+                roadY1 = -canvas.height + (roadY1 - canvas.height); // Wrap around
+            }
+            if (roadY2 >= canvas.height) {
+                roadY2 = -canvas.height + (roadY2 - canvas.height); // Wrap around
+            }
+
+            // Dynamically adjust obstacle spawn interval
+            const currentObstacleSpawnInterval = Math.max(minObstacleSpawnInterval, 1000 - Math.floor(score / 10) * intervalReductionRate);
+
+            // Spawn obstacles
+            if (currentTime - lastObstacleSpawnTime > currentObstacleSpawnInterval) {
+                const availableLanes = [0, 1, 2];
+                const numObstaclesToSpawn = Math.random() < (score > 100 ? 0.4 : 0.1) ? 2 : 1; // Chance to spawn 2 obstacles after score 100
+
+                // Ensure unique lanes for multiple obstacles
+                const lanesToSpawn = [];
+                while (lanesToSpawn.length < numObstaclesToSpawn && availableLanes.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * availableLanes.length);
+                    lanesToSpawn.push(availableLanes.splice(randomIndex, 1)[0]);
+                }
+
+                lanesToSpawn.forEach(lane => {
+                    const randomType = Math.random() < 0.7 ? 'short' : 'tall'; // More short obstacles
+                    obstacles.push(new Obstacle(lane, randomType));
+                });
+
+                lastObstacleSpawnTime = currentTime;
+            }
+
+            // Update and filter obstacles
+            obstacles = obstacles.filter(obstacle => {
+                obstacle.update();
+                // Check for collision
+                if (checkCollision(player, obstacle)) {
+                    // If player is jumping
+                    if (player.isJumping) {
+                        // If it's a 'short' obstacle, the player passes over it.
+                        // If it's a 'tall' obstacle, there's still a collision.
+                        if (obstacle.height === 40) { // 'Short' obstacle
+                            return true; // Keep obstacle, player successfully jumped over
+                        } else { // 'Tall' obstacle (height 80)
+                            endGame(); // Collision with tall obstacle, even when jumping
+                            return false;
+                        }
+                    } else {
+                        // If player is NOT jumping, any collision is game over.
+                        endGame();
+                        return false;
+                    }
+                }
+                // Remove obstacles that are off-screen
+                return obstacle.y < canvas.height + obstacle.height;
+            });
+
+            updateScoreDisplay();
+
+            // Draw
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+            // Draw road background
+            if (roadImage.complete && roadImage.naturalWidth !== 0) {
+                ctx.drawImage(roadImage, 0, roadY1, canvas.width, canvas.height);
+                ctx.drawImage(roadImage, 0, roadY2, canvas.width, canvas.height);
+            } else {
+                // Fallback: draw a solid color if road image fails to load
+                ctx.fillStyle = '#66BB6A'; /* Cor de fundo do canvas */
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            obstacles.forEach(obstacle => obstacle.draw());
+            player.draw();
+            chaser.draw(); // Chaser is drawn behind the player
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameOver = true;
+            finalScoreDisplay.textContent = Math.floor(score);
+            gameOverScreen.classList.remove('hidden');
+            if (score > highScore) {
+                highScore = Math.floor(score);
+                localStorage.setItem('subwaySurfersHighScore', highScore);
+                highScoreDisplay.textContent = `Recorde: ${highScore}`;
+            }
+        }
+
+        restartButton.addEventListener('click', () => {
+            initGame();
+            requestAnimationFrame(gameLoop);
+        });
+
+        // --- Input Handling (Mobile and Desktop) ---
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let mouseIsDown = false;
+        let mouseStartX = 0;
+        let mouseStartY = 0;
+
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+
+            // Determine if it's a horizontal or vertical swipe
+            if (Math.abs(dx) > Math.abs(dy)) { // Horizontal swipe (lane change)
+                if (dx > 0) {
+                    player.changeLane(1); // Swipe right
+                } else {
+                    player.changeLane(-1); // Swipe left
+                }
+            } else { // Vertical swipe (jump)
+                if (dy < 0) { // Swiping upwards
+                    player.jump(); // Trigger jump
+                }
+            }
+        });
+
+        // Mouse events for PC (simulating drag)
+        canvas.addEventListener('mousedown', (e) => {
+            mouseIsDown = true;
+            mouseStartX = e.clientX;
+            mouseStartY = e.clientY;
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (!mouseIsDown) return; // Only process if mouse button was pressed
+            mouseIsDown = false;
+
+            const mouseEndX = e.clientX;
+            const mouseEndY = e.clientY;
+
+            const dx = mouseEndX - mouseStartX;
+            const dy = mouseEndY - mouseStartY;
+
+            // Determine if it's a horizontal or vertical drag
+            if (Math.abs(dx) > Math.abs(dy)) { // Horizontal drag (lane change)
+                if (dx > 0) {
+                    player.changeLane(1); // Drag right
+                } else {
+                    player.changeLane(-1); // Drag left
+                }
+            } else { // Vertical drag (jump)
+                if (dy < 0) { // Drag upwards
+                    player.jump(); // Trigger jump
+                }
+            }
+        });
+
+        // Keyboard input for desktop (still active as alternative)
+        document.addEventListener('keydown', (e) => {
+            if (gameOver) return;
+            switch (e.key) {
+                case 'ArrowUp':
+                    player.jump();
+                    break;
+                case 'ArrowLeft':
+                    player.changeLane(-1);
+                    break;
+                case 'ArrowRight':
+                    player.changeLane(1);
+                    break;
+            }
+        });
+
+        // Start the game when the window loads
+        // Game initialization is now done after images are loaded
+        // to ensure Sonic is displayed correctly.
+        // If images are already loaded (e.g., on a quick reload),
+        // the game will start immediately.
+        if (imagesLoaded === totalImages) {
+            window.onload = function() {
+                initGame();
+                requestAnimationFrame(gameLoop);
+            };
+        }
+    </script>
+</body>
+</html>

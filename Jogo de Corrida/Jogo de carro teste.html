@@ -380,6 +380,9 @@
 
         // Game variables
         const canvas = document.getElementById('gameCanvas');
+        // Set internal resolution to match design intent
+        canvas.width = 500;
+        canvas.height = 600;
         const ctx = canvas.getContext('2d');
         const scoreDisplay = document.getElementById('score');
         const highScoreDisplay = document.getElementById('highScore');
@@ -885,7 +888,10 @@
             if (gameState !== 'playing') return;
 
             const rect = canvas.getBoundingClientRect();
-            const clickX = e.clientX - rect.left; // Get X relative to canvas
+            // Calculate scale factor in case canvas is resized via CSS
+            const scaleX = canvas.width / rect.width;
+            
+            const clickX = (e.clientX - rect.left) * scaleX; // Get X relative to canvas internal resolution
 
             if (clickX < canvas.width / 2) { // Clicked on left half
                 currentLane = Math.max(0, currentLane - 1);

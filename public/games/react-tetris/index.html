@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <!--
+      Empilha Blocos — baseado em react-tetris de Chvin (https://github.com/chvin/react-tetris),
+      licenciado sob Apache-2.0. Modificações VAH Games: tradução para português (pt) como idioma
+      padrão, textos desta página e botão de voltar ao portal. Veja LICENSE-NOTICE.txt.
+    -->
+    <meta name="renderer" content="webkit">
+    <meta name="description" content="Empilha Blocos — jogo de blocos do portal VAH Games" />
+    <meta name="format-detection" content="telephone=no"/>
+    <script>;(function(){var w=parseInt(window.screen.width),s=w/640,u=navigator.userAgent.toLowerCase(),m='<meta name="viewport" content="width=640,';if(/android (\d+\.\d+)/.test(u)){if(parseFloat(RegExp.$1)>2.3)m+='minimum-scale='+s+',maximum-scale='+s+',';}else{m+='user-scalable=no,';}m+='target-densitydpi=device-dpi">';document.write(m);}());</script>
+    <meta charset="UTF-8">
+    <title>Empilha Blocos</title>
+    <link href="./loader.css" rel="stylesheet" />
+    <link href="css-1.0.1.css" rel="stylesheet">
+    <style>
+      .vah-voltar{position:fixed;top:12px;left:12px;z-index:1000;padding:8px 16px;border-radius:999px;
+        background:#111827;color:#fff;font:600 14px/1 system-ui,sans-serif;text-decoration:none;
+        box-shadow:0 2px 8px rgba(0,0,0,.4)}
+      .vah-voltar:hover{background:#16a34a}
+    </style>
+</head>
+<body>
+<a class="vah-voltar" href="/">&larr; VAH Games</a>
+<div id="root">
+    <div class="load">
+        <div class="loader">Carregando...</div>
+    </div>
+</div>
+<script type="text/javascript" src="app-1.0.1.js"></script></body>
+</html>

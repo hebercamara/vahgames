@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Jornada do Labirinto: 20 Fases</title>
+    <style>
+        body {
+            margin: 0;
+            /* overflow: hidden; REMOVIDO: Permite rolagem da página se o conteúdo for maior que a tela */
+            background-color: #1a1a2e; /* Fundo escuro */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Alinha o conteúdo ao topo, permitindo rolagem para baixo */
+            min-height: 100vh;
+            font-family: 'Press Start 2P', cursive; /* Fonte estilo pixel art */
+            color: #e0e0e0;
+            -webkit-user-select: none; /* Desabilita seleção de texto */
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            position: relative; /* Para os modais */
+            padding-bottom: 20px; /* Adiciona um pouco de espaço na parte inferior para rolagem */
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        canvas {
+            background-color: #2a2a4a; /* Cor de fundo do labirinto */
+            border: 4px solid #4a4a7a;
+            border-radius: 10px;
+            display: block;
+            touch-action: none; /* Desabilita o comportamento padrão de toque */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
+        .game-info div {
+            padding: 8px 15px;
+            background-color: #3a3a6a;
+            border-radius: 8px;
+            border: 2px solid #5a5a8a;
+        }
+
+        /* Estilos do Joystick */
+        .joystick-container {
+            position: relative;
+            width: 150px; /* Tamanho base da área do joystick */
+            height: 150px;
+            background-color: rgba(58, 58, 106, 0.7); /* Fundo semi-transparente */
+            border-radius: 50%;
+            border: 3px solid #5a5a8a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .joystick-handle {
+            width: 60px; /* Tamanho do círculo arrastável */
+            height: 60px;
+            background-color: #6a0572; /* Roxo vibrante */
+            border-radius: 50%;
+            border: 3px solid #9d00b0;
+            position: absolute;
+            cursor: grab;
+            transition: background-color 0.1s ease; /* Transição suave ao passar o mouse */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .joystick-handle:active {
+            cursor: grabbing;
+            background-color: #9d00b0;
+        }
+
+        /* Botão da Loja */
+        .shop-button {
+            background-color: #ff9800; /* Laranja */
+            color: white;
+            border: 3px solid #e65100;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+            box-shadow: 0 6px 0 #bf360c;
+            margin-top: 10px;
+        }
+
+        .shop-button:active {
+            background-color: #e65100;
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #bf360c;
+        }
+
+        /* Inventário */
+        .inventory-container {
+            background-color: #3a3a6a;
+            border-radius: 10px;
+            border: 2px solid #5a5a8a;
+            padding: 10px;
+            margin-top: 15px;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .inventory-container h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #ffcc00;
+            font-size: 1.1em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .inventory-items {
+            display: flex;
+            flex-wrap: wrap; /* Permite que os itens quebrem para a próxima linha */
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .use-item-button {
+            background-color: #007bff;
+            color: white;
+            border: 2px solid #0056b3;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            box-shadow: 0 3px 0 #004085;
+            font-size: 0.9em;
+            flex-grow: 1; /* Permite que os botões cresçam para preencher o espaço */
+            min-width: 120px; /* Garante um tamanho mínimo */
+        }
+
+        .use-item-button:active {
+            background-color: #0056b3;
+            transform: translateY(1px);
+            box-shadow: 0 1px 0 #004085;
+        }
+        .use-item-button:disabled {
+            background-color: #6c757d;
+            border-color: #5a6268;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+
+        /* Modais */
+        .message-modal, .shop-modal {
+            display: none; /* Escondido por padrão */
+            position: fixed; /* Usar fixed para garantir que fiquem na tela */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: #3a3a6a;
+            padding: 30px;
+            border-radius: 15px;
+            border: 4px solid #5a5a8a;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            max-width: 80%;
+            max-height: 90vh; /* Adicionado para permitir rolagem */
+            overflow-y: auto; /* Adicionado para permitir rolagem */
+            font-size: 1.5em;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .modal-content h2 {
+            color: #ffcc00; /* Amarelo vibrante */
+            margin-top: 0;
+            font-size: 1.8em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content p {
+            margin-bottom: 20px;
+            color: #e0e0e0;
+        }
+
+        .modal-button {
+            background-color: #28a745; /* Verde para ação */
+            color: white;
+            border: 3px solid #1e7e34;
+            border-radius: 10px;
+            padding: 12px 25px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 6px 0 #1c6b2f;
+            margin-top: 20px; /* Adicionado margem para separar do texto */
+        }
+
+        .modal-button:active {
+            background-color: #1e7e34;
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #1c6b2f;
+        }
+
+        /* Estilos específicos da loja */
+        .shop-modal .modal-content {
+            padding: 20px;
+        }
+        .shop-modal h2 {
+            margin-bottom: 15px;
+        }
+        .shop-items {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .shop-item {
+            background-color: #4a4a7a;
+            border: 2px solid #6a6a9a;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1em;
+        }
+        .shop-item-info strong {
+            color: #ffcc00;
+        }
+        .shop-item-info span {
+            display: block;
+            font-size: 0.8em;
+            color: #ccc;
+        }
+        .buy-button {
+            background-color: #007bff;
+            color: white;
+            border: 2px solid #0056b3;
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            box-shadow: 0 4px 0 #004085;
+            font-size: 0.9em;
+        }
+        .buy-button:active {
+            background-color: #0056b3;
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #004085;
+        }
+        .buy-button:disabled {
+            background-color: #6c757d;
+            border-color: #5a6268;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .shop-close-button {
+            background-color: #dc3545;
+            border-color: #b02a37;
+            margin-top: 25px;
+            font-size: 1.1em;
+        }
+        .shop-close-button:active {
+            background-color: #b02a37;
+        }
+
+        /* Responsividade para telas menores */
+        @media (max-width: 600px) {
+            .game-info {
+                font-size: 1em;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .joystick-container {
+                width: 120px;
+                height: 120px;
+            }
+            .joystick-handle {
+                width: 50px;
+                height: 50px;
+            }
+            .modal-content {
+                padding: 20px;
+                font-size: 1.2em;
+            }
+            .modal-content h2 {
+                font-size: 1.5em;
+            }
+            .modal-button {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+            .shop-button {
+                font-size: 1em;
+                padding: 8px 15px;
+            }
+            .inventory-container {
+                padding: 8px;
+            }
+            .inventory-container h3 {
+                font-size: 1em;
+            }
+            .use-item-button {
+                font-size: 0.8em;
+                padding: 6px 10px;
+                min-width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-info">
+        <div id="stage-display">Fase: 1</div>
+        <div id="trophies-display">Troféus: 0</div>
+        <div id="timer-display">Tempo: 00:00</div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <!-- Novo Joystick Virtual -->
+    <div class="joystick-container" id="joystickContainer">
+        <div class="joystick-handle" id="joystickHandle"></div>
+    </div>
+    <button id="shopButton" class="shop-button">Loja</button>
+
+    <!-- Inventário -->
+    <div class="inventory-container">
+        <h3>Inventário</h3>
+        <div id="inventory-items" class="inventory-items">
+            <!-- Itens do inventário serão injetados aqui via JS -->
+        </div>
+    </div>
+
+    <!-- Modal de Mensagem -->
+    <div id="messageModal" class="message-modal">
+        <div class="modal-content">
+            <h2 id="modalTitle"></h2>
+            <p id="modalMessage"></p>
+            <button id="modalButton" class="modal-button" style="display: none;"></button>
+        </div>
+    </div>
+
+    <!-- Modal da Loja -->
+    <div id="shopModal" class="shop-modal">
+        <div class="modal-content">
+            <h2>Loja de Itens</h2>
+            <p>Troféus: <span id="shopTrophiesDisplay">0</span></p>
+            <div class="shop-items">
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <strong>Escudo de Invencibilidade</strong>
+                        <span>Estende a invencibilidade da fruta por +5s</span>
+                        <span>Custo: 50 Troféus</span>
+                    </div>
+                    <button class="buy-button" data-item="invincibility_shield_item">Comprar</button>
+                </div>
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <strong>Congelar Monstros</strong>
+                        <span>Congela todos os monstros por 7s</span>
+                        <span>Custo: 30 Troféus</span>
+                    </div>
+                    <button class="buy-button" data-item="freeze_monsters_item">Comprar</button>
+                </div>
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <strong>Exterminador de Monstros</strong>
+                        <span>Elimina todos os monstros do labirinto</span>
+                        <span>Custo: 25 Troféus</span>
+                    </div>
+                    <button class="buy-button" data-item="monster_exterminator_item">Comprar</button>
+                </div>
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <strong>Blaster</strong>
+                        <span>Elimina um monstro aleatório</span>
+                        <span>Custo: 25 Troféus</span>
+                    </div>
+                    <button class="buy-button" data-item="blaster_item">Comprar</button>
+                </div>
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <strong>Canal</strong>
+                        <span>Teletransporta para o início da fase</span>
+                        <span>Custo: 40 Troféus</span>
+                    </div>
+                    <button class="buy-button" data-item="canal_item">Comprar</button>
+                </div>
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <strong>Visão de Raio-X</strong>
+                        <span>Destaca o objetivo por 5s</span>
+                        <span>Custo: 70 Troféus</span>
+                    </div>
+                    <button class="buy-button" data-item="xray_vision_item">Comprar</button>
+                </div>
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <strong>Armadilha de Gelo</strong>
+                        <span>Congela o próximo monstro que pisar nela por 5s</span>
+                        <span>Custo: 35 Troféus</span>
+                    </div>
+                    <button class="buy-button" data-item="ice_trap_item">Comprar</button>
+                </div>
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <strong>Mina de Retorno</strong>
+                        <span>Teletransporta o próximo monstro para um local seguro</span>
+                        <span>Custo: 60 Troféus</span>
+                    </div>
+                    <button class="buy-button" data-item="return_mine_item">Comprar</button>
+                </div>
+            </div>
+            <button id="shopCloseButton" class="modal-button shop-close-button">Fechar Loja</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const stageDisplay = document.getElementById('stage-display');
+        const trophiesDisplay = document.getElementById('trophies-display');
+        const timerDisplay = document.getElementById('timer-display');
+        const messageModal = document.getElementById('messageModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalButton = document.getElementById('modalButton');
+
+        // Elementos da Loja
+        const shopButton = document.getElementById('shopButton');
+        const shopModal = document.getElementById('shopModal');
+        const shopTrophiesDisplay = document.getElementById('shopTrophiesDisplay');
+        const shopCloseButton = document.getElementById('shopCloseButton');
+        const buyButtons = document.querySelectorAll('.buy-button');
+
+        // Elementos do Inventário
+        const inventoryItemsDiv = document.getElementById('inventory-items');
+
+        // Elementos do Joystick
+        const joystickContainer = document.getElementById('joystickContainer');
+        const joystickHandle = document.getElementById('joystickHandle');
+
+        // --- Variáveis do Jogo ---
+        const WALL_THICKNESS = 2;
+        const PLAYER_SIZE_RATIO = 0.8;
+        const START_COLOR = '#4CAF50';
+        const END_COLOR = '#F44336';
+        const PATH_COLOR = '#2a2a4a';
+        const WALL_COLOR = '#4a4a7a';
+        const PLAYER_COLOR = '#00BCD4'; // Fallback para o jogador
+        const MONSTER_COLOR = '#FF00FF'; // Fallback para monstros
+        const MONSTER_SIZE_RATIO = 0.7;
+        const FRUIT_COLOR = '#FFD700';
+        const FRUIT_SIZE_RATIO = 0.5;
+        const TRAP_COLOR = '#424242';
+        const TRAP_SIZE_RATIO = 0.6;
+        const PLACED_ITEM_COLOR = '#8B008B'; // Cor para armadilhas/minas colocadas pelo jogador
+
+        let CELL_SIZE = 40;
+        let maze = [];
+        let currentStage = 1;
+        let playerX, playerY;
+        let goalX, goalY;
+        let gameRunning = false;
+        let animationFrameId;
+        let timerInterval;
+        let timeRemaining;
+        let trophies = 0;
+
+        let monsters = [];
+        let monsterMoveIntervalId;
+        let monsterVisibilityIntervalId;
+        let isMonsterVisible = true;
+
+        let fruits = [];
+        let isInvincible = false;
+        let invincibilityTimerId;
+        let invincibilityDuration = 30000; // 30 segundos de invencibilidade base
+
+        let traps = []; // Armadilhas do mapa
+        let isTrapVisible = true;
+        let trapVisibilityIntervalId;
+
+        let isMonstersFrozen = false;
+        let monsterFreezeTimerId;
+
+        let isXRayActive = false;
+        let xRayTimerId;
+
+        let placedItems = [];
+
+        // Novo: Inventário do jogador
+        let playerInventory = {
+            'invincibility_shield_item': 0,
+            'freeze_monsters_item': 0,
+            'monster_exterminator_item': 0,
+            'blaster_item': 0,
+            'canal_item': 0,
+            'xray_vision_item': 0,
+            'ice_trap_item': 0,
+            'return_mine_item': 0
+        };
+
+        // --- Configurações das 20 Fases ---
+        const stages = [
+            {},
+            // Fases iniciais mais fáceis (ajustadas)
+            { mazeCols: 8, mazeRows: 8, timeLimitSeconds: 300, message: "Bem-vindo! Encontre a saída vermelha!", monsterCount: 0, monsterMoveInterval: 0, timePenaltyOnHit: 0, monsterVisibilityToggleInterval: 0, trapCount: 0, trapPenaltyOnHit: 0, trapVisibilityToggleInterval: 0 },
+            { mazeCols: 10, mazeRows: 10, timeLimitSeconds: 300, message: "O labirinto está um pouco maior.", monsterCount: 2, monsterMoveInterval: 1200, timePenaltyOnHit: 5, monsterVisibilityToggleInterval: 2500, trapCount: 1, trapPenaltyOnHit: 5, trapVisibilityToggleInterval: 2000 },
+            { mazeCols: 12, mazeRows: 12, timeLimitSeconds: 300, message: "Novos desafios aguardam.", monsterCount: 4, monsterMoveInterval: 1100, timePenaltyOnHit: 5, monsterVisibilityToggleInterval: 2300, trapCount: 2, trapPenaltyOnHit: 6, trapVisibilityToggleInterval: 1800 },
+            { mazeCols: 14, mazeRows: 14, timeLimitSeconds: 300, message: "Você está ficando bom nisso!", monsterCount: 6, monsterMoveInterval: 1000, timePenaltyOnHit: 6, monsterVisibilityToggleInterval: 2100, trapCount: 3, trapPenaltyOnHit: 7, trapVisibilityToggleInterval: 1600 },
+            { mazeCols: 16, mazeRows: 16, timeLimitSeconds: 300, message: "Cuidado com o tempo!", monsterCount: 8, monsterMoveInterval: 950, timePenaltyOnHit: 6, monsterVisibilityToggleInterval: 2000, trapCount: 4, trapPenaltyOnHit: 8, trapVisibilityToggleInterval: 1500 },
+            // A partir daqui, as fases seguem a progressão anterior (ajustadas para 3x o tamanho original)
+            { mazeCols: 30, mazeRows: 30, timeLimitSeconds: 300, message: "O labirinto cresce!", monsterCount: 10, monsterMoveInterval: 750, timePenaltyOnHit: 7, monsterVisibilityToggleInterval: 1500, trapCount: 6, trapPenaltyOnHit: 9, trapVisibilityToggleInterval: 1400 },
+            { mazeCols: 33, mazeRows: 33, timeLimitSeconds: 300, message: "Pense rápido!", monsterCount: 10, monsterMoveInterval: 700, timePenaltyOnHit: 7, monsterVisibilityToggleInterval: 1400, trapCount: 7, trapPenaltyOnHit: 10, trapVisibilityToggleInterval: 1300 },
+            { mazeCols: 36, mazeRows: 36, timeLimitSeconds: 300, message: "Quase na metade!", monsterCount: 10, monsterMoveInterval: 650, timePenaltyOnHit: 8, monsterVisibilityToggleInterval: 1300, trapCount: 8, trapPenaltyOnHit: 11, trapVisibilityToggleInterval: 1200 },
+            { mazeCols: 39, mazeRows: 39, timeLimitSeconds: 300, message: "O tempo está correndo!", monsterCount: 10, monsterMoveInterval: 600, timePenaltyOnHit: 8, monsterVisibilityToggleInterval: 1200, trapCount: 9, trapPenaltyOnHit: 12, trapVisibilityToggleInterval: 1100 },
+            { mazeCols: 42, mazeRows: 42, timeLimitSeconds: 300, message: "Fase 10: O Desafio Principal!", monsterCount: 10, monsterMoveInterval: 550, timePenaltyOnHit: 9, monsterVisibilityToggleInterval: 1100, trapCount: 10, trapPenaltyOnHit: 13, trapVisibilityToggleInterval: 1000 },
+            { mazeCols: 45, mazeRows: 45, timeLimitSeconds: 300, message: "Labirintos mais complexos.", monsterCount: 10, monsterMoveInterval: 500, timePenaltyOnHit: 9, monsterVisibilityToggleInterval: 1000, trapCount: 11, trapPenaltyOnHit: 14, trapVisibilityToggleInterval: 950 },
+            { mazeCols: 48, mazeRows: 48, timeLimitSeconds: 300, message: "A dificuldade aumenta!", monsterCount: 10, monsterMoveInterval: 480, timePenaltyOnHit: 10, monsterVisibilityToggleInterval: 950, trapCount: 12, trapPenaltyOnHit: 15, trapVisibilityToggleInterval: 900 },
+            { mazeCols: 51, mazeRows: 51, timeLimitSeconds: 300, message: "Você é um mestre do labirinto?", monsterCount: 10, monsterMoveInterval: 460, timePenaltyOnHit: 10, monsterVisibilityToggleInterval: 900, trapCount: 13, trapPenaltyOnHit: 16, trapVisibilityToggleInterval: 850 },
+            { mazeCols: 54, mazeRows: 54, timeLimitSeconds: 300, message: "Quase lá!", monsterCount: 10, monsterMoveInterval: 440, timePenaltyOnHit: 11, monsterVisibilityToggleInterval: 850, trapCount: 14, trapPenaltyOnHit: 17, trapVisibilityToggleInterval: 800 },
+            { mazeCols: 57, mazeRows: 57, timeLimitSeconds: 300, message: "Os labirintos se tornam gigantes.", monsterCount: 10, monsterMoveInterval: 420, timePenaltyOnHit: 11, monsterVisibilityToggleInterval: 800, trapCount: 15, trapPenaltyOnHit: 18, trapVisibilityToggleInterval: 750 },
+            { mazeCols: 60, mazeRows: 60, timeLimitSeconds: 300, message: "Precisão e velocidade!", monsterCount: 10, monsterMoveInterval: 400, timePenaltyOnHit: 12, monsterVisibilityToggleInterval: 750, trapCount: 16, trapPenaltyOnHit: 19, trapVisibilityToggleInterval: 700 },
+            { mazeCols: 63, mazeRows: 63, timeLimitSeconds: 300, message: "O fim está próximo!", monsterCount: 10, monsterMoveInterval: 380, timePenaltyOnHit: 12, monsterVisibilityToggleInterval: 700, trapCount: 17, trapPenaltyOnHit: 20, trapVisibilityToggleInterval: 650 },
+            { mazeCols: 66, mazeRows: 66, timeLimitSeconds: 300, message: "A pressão aumenta!", monsterCount: 10, monsterMoveInterval: 360, timePenaltyOnHit: 13, monsterVisibilityToggleInterval: 650, trapCount: 18, trapPenaltyOnHit: 21, trapVisibilityToggleInterval: 600 },
+            { mazeCols: 69, mazeRows: 69, timeLimitSeconds: 300, message: "A Antecâmara do Fim!", monsterCount: 10, monsterMoveInterval: 340, timePenaltyOnHit: 13, monsterVisibilityToggleInterval: 600, trapCount: 19, trapPenaltyOnHit: 22, trapVisibilityToggleInterval: 550 },
+            { mazeCols: 72, mazeRows: 72, timeLimitSeconds: 300, message: "Fase Final: O Desafio Supremo!", monsterCount: 10, monsterMoveInterval: 300, timePenaltyOnHit: 15, monsterVisibilityToggleInterval: 500, trapCount: 20, trapPenaltyOnHit: 25, trapVisibilityToggleInterval: 500 }
+        ];
+
+        // --- Imagem do Jogador ---
+        const playerImage = new Image();
+        playerImage.src = '/images/arthur/Chat-GPT-Image-18-de-jul-de-2025-23-42-33.png'; // URL da imagem fornecida pelo usuário
+        let playerImageLoaded = false;
+        playerImage.onload = () => {
+            playerImageLoaded = true;
+            if (gameRunning) {
+                draw();
+            }
+        };
+        playerImage.onerror = () => {
+            console.error("Falha ao carregar a imagem do jogador. Usando círculo padrão.");
+            playerImageLoaded = false;
+        };
+
+        // --- Imagem do Monstro ---
+        const monsterImage = new Image();
+        monsterImage.src = '/images/arthur/Zumbi.png'; // Nova URL da imagem do monstro
+        let monsterImageLoaded = false;
+        monsterImage.onload = () => {
+            monsterImageLoaded = true;
+            if (gameRunning) {
+                draw();
+            }
+        };
+        monsterImage.onerror = () => {
+            console.error("Falha ao carregar a imagem do monstro. Usando quadrado padrão.");
+            monsterImageLoaded = false;
+        };
+
+
+        // --- Classe Cell (Célula do Labirinto) ---
+        class Cell {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.walls = {
+                    top: true,
+                    right: true,
+                    bottom: true,
+                    left: true
+                };
+                this.visited = false;
+            }
+        }
+
+        // --- Gerador de Labirinto (Algoritmo de Backtracking Recursivo) ---
+        function generateMaze(rows, cols) {
+            maze = [];
+            for (let r = 0; r < rows; r++) {
+                let row = [];
+                for (let c = 0; c < cols; c++) {
+                    row.push(new Cell(c, r));
+                }
+                maze.push(row);
+            }
+
+            let stack = [];
+            let current = maze[0][0];
+            current.visited = true;
+            stack.push(current);
+
+            while (stack.length > 0) {
+                current = stack[stack.length - 1];
+
+                let neighbors = [];
+                if (current.y > 0 && !maze[current.y - 1][current.x].visited) {
+                    neighbors.push(maze[current.y - 1][current.x]);
+                }
+                if (current.x < cols - 1 && !maze[current.y][current.x + 1].visited) {
+                    neighbors.push(maze[current.y][current.x + 1]);
+                }
+                if (current.y < rows - 1 && !maze[current.y + 1][current.x].visited) {
+                    neighbors.push(maze[current.y + 1][current.x]);
+                }
+                if (current.x > 0 && !maze[current.y][current.x - 1].visited) {
+                    neighbors.push(maze[current.y][current.x - 1]);
+                }
+
+                if (neighbors.length > 0) {
+                    let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    removeWalls(current, next);
+                    next.visited = true;
+                    stack.push(next);
+                } else {
+                    stack.pop();
+                }
+            }
+
+            playerX = 0;
+            playerY = 0;
+            goalX = cols - 1;
+            goalY = rows - 1;
+        }
+
+        function removeWalls(cell1, cell2) {
+            let x_diff = cell1.x - cell2.x;
+            let y_diff = cell1.y - cell2.y;
+
+            if (x_diff === 1) {
+                cell1.walls.left = false;
+                cell2.walls.right = false;
+            } else if (x_diff === -1) {
+                cell1.walls.right = false;
+                cell2.walls.left = false;
+            }
+
+            if (y_diff === 1) {
+                cell1.walls.top = false;
+                cell2.walls.bottom = false;
+            } else if (y_diff === -1) {
+                cell1.walls.bottom = false;
+                cell2.walls.top = false;
+            }
+        }
+
+        // --- Funções de Desenho ---
+        function drawMaze() {
+            ctx.fillStyle = PATH_COLOR;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const { mazeCols, mazeRows } = stages[currentStage];
+
+            for (let r = 0; r < mazeRows; r++) {
+                for (let c = 0; c < mazeCols; c++) {
+                    let cell = maze[r][c];
+                    let x = c * CELL_SIZE;
+                    let y = r * CELL_SIZE;
+
+                    ctx.strokeStyle = WALL_COLOR;
+                    ctx.lineWidth = WALL_THICKNESS;
+
+                    if (cell.walls.top) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + CELL_SIZE, y);
+                        ctx.stroke();
+                    }
+                    if (cell.walls.right) {
+                        ctx.beginPath();
+                        ctx.moveTo(x + CELL_SIZE, y);
+                        ctx.lineTo(x + CELL_SIZE, y + CELL_SIZE);
+                        ctx.stroke();
+                    }
+                    if (cell.walls.bottom) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, y + CELL_SIZE);
+                        ctx.lineTo(x + CELL_SIZE, y + CELL_SIZE);
+                        ctx.stroke();
+                    }
+                    if (cell.walls.left) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x, y + CELL_SIZE);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            ctx.fillStyle = START_COLOR;
+            ctx.fillRect(0 * CELL_SIZE, 0 * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+
+            ctx.fillStyle = END_COLOR;
+            ctx.fillRect(goalX * CELL_SIZE, goalY * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+
+            if (isXRayActive) {
+                ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+                ctx.fillRect(goalX * CELL_SIZE, goalY * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            }
+        }
+
+        function drawPlayer() {
+            const playerOffset = (CELL_SIZE * (1 - PLAYER_SIZE_RATIO)) / 2;
+            const playerDrawSize = CELL_SIZE * PLAYER_SIZE_RATIO;
+
+            // Desenha o brilho de invencibilidade por trás
+            if (isInvincible) {
+                ctx.shadowColor = 'rgba(0, 255, 0, 0.8)';
+                ctx.shadowBlur = 10;
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.5)';
+                ctx.beginPath();
+                ctx.arc(
+                    playerX * CELL_SIZE + CELL_SIZE / 2,
+                    playerY * CELL_SIZE + CELL_SIZE / 2,
+                    playerDrawSize / 2 + 5, // Um pouco maior que o jogador
+                    0, Math.PI * 2
+                );
+                ctx.fill();
+                ctx.shadowColor = 'transparent'; // Resetar sombra
+                ctx.shadowBlur = 0;
+            }
+
+            // Desenha a imagem do jogador ou o círculo de fallback
+            if (playerImageLoaded) {
+                ctx.drawImage(
+                    playerImage,
+                    playerX * CELL_SIZE + playerOffset,
+                    playerY * CELL_SIZE + playerOffset,
+                    playerDrawSize,
+                    playerDrawSize
+                );
+            } else {
+                ctx.fillStyle = PLAYER_COLOR;
+                ctx.beginPath();
+                ctx.arc(
+                    playerX * CELL_SIZE + CELL_SIZE / 2,
+                    playerY * CELL_SIZE + CELL_SIZE / 2,
+                    playerDrawSize / 2,
+                    0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+        }
+
+        function drawMonsters() {
+            if (!isMonsterVisible) return;
+
+            const monsterOffset = (CELL_SIZE * (1 - MONSTER_SIZE_RATIO)) / 2;
+            const monsterDrawSize = CELL_SIZE * MONSTER_SIZE_RATIO;
+
+            // Desenha a imagem do monstro ou o quadrado de fallback
+            if (monsterImageLoaded) {
+                monsters.forEach(monster => {
+                    ctx.drawImage(
+                        monsterImage,
+                        monster.x * CELL_SIZE + monsterOffset,
+                        monster.y * CELL_SIZE + monsterOffset,
+                        monsterDrawSize,
+                        monsterDrawSize
+                    );
+                });
+            } else {
+                ctx.fillStyle = MONSTER_COLOR; // Fallback color
+                monsters.forEach(monster => {
+                    ctx.fillRect(
+                        monster.x * CELL_SIZE + monsterOffset,
+                        monster.y * CELL_SIZE + monsterOffset,
+                        monsterDrawSize,
+                        monsterDrawSize
+                    );
+                });
+            }
+        }
+
+        function drawFruits() {
+            const fruitOffset = (CELL_SIZE * (1 - FRUIT_SIZE_RATIO)) / 2;
+            const fruitDrawSize = CELL_SIZE * FRUIT_SIZE_RATIO;
+
+            ctx.fillStyle = FRUIT_COLOR;
+            fruits.forEach(fruit => {
+                ctx.beginPath();
+                ctx.arc(
+                    fruit.x * CELL_SIZE + CELL_SIZE / 2,
+                    fruit.y * CELL_SIZE + CELL_SIZE / 2,
+                    fruitDrawSize / 2,
+                    0, Math.PI * 2
+                );
+                ctx.fill();
+            });
+        }
+
+        function drawTraps() {
+            if (!isTrapVisible) return; // Não desenha se não estiver visível
+
+            const trapOffset = (CELL_SIZE * (1 - TRAP_SIZE_RATIO)) / 2;
+            const trapDrawSize = CELL_SIZE * TRAP_SIZE_RATIO;
+
+            ctx.fillStyle = TRAP_COLOR;
+            traps.forEach(trap => {
+                ctx.fillRect(
+                    trap.x * CELL_SIZE + trapOffset,
+                    trap.y * CELL_SIZE + trapOffset,
+                    trapDrawSize,
+                    trapDrawSize
+                );
+            });
+
+            placedItems.forEach(item => {
+                const itemOffset = (CELL_SIZE * (1 - TRAP_SIZE_RATIO)) / 2;
+                const itemDrawSize = CELL_SIZE * TRAP_SIZE_RATIO;
+                if (item.type === 'ice_trap_item') {
+                    ctx.fillStyle = 'rgba(0, 191, 255, 0.7)';
+                } else if (item.type === 'return_mine_item') {
+                    ctx.fillStyle = 'rgba(255, 140, 0, 0.7)';
+                }
+                ctx.fillRect(
+                    item.x * CELL_SIZE + itemOffset,
+                    item.y * CELL_SIZE + itemOffset,
+                    itemDrawSize,
+                    itemDrawSize
+                );
+            });
+        }
+
+        // --- Funções de Lógica do Jogo ---
+        function movePlayer(dx, dy) {
+            if (!gameRunning) return;
+
+            const { mazeCols, mazeRows } = stages[currentStage];
+            let newPlayerX = playerX + dx;
+            let newPlayerY = playerY + dy;
+
+            let canMove = true;
+            const currentCell = maze[playerY][playerX];
+
+            if (dx === -1 && currentCell.walls.left) canMove = false;
+            if (dx === 1 && currentCell.walls.right) canMove = false;
+            if (dy === -1 && currentCell.walls.top) canMove = false;
+            if (dy === 1 && currentCell.walls.bottom) canMove = false;
+
+            if (newPlayerX < 0 || newPlayerX >= mazeCols || newPlayerY < 0 || newPlayerY >= mazeRows) {
+                canMove = false;
+            }
+
+            if (canMove) {
+                playerX = newPlayerX;
+                playerY = newPlayerY;
+                draw();
+                checkFruitCollision();
+                checkMonsterCollision();
+                checkTrapCollision();
+                checkPlacedItemCollisionForMonsters(); // Apenas para monstros
+                checkWinCondition();
+            }
+        }
+
+        function spawnMonsters() {
+            monsters = [];
+            const stageConfig = stages[currentStage];
+            const { mazeCols, mazeRows } = stageConfig;
+
+            if (stageConfig.monsterCount === 0) return;
+
+            if (stageConfig.monsterCount > 0) {
+                monsters.push({ x: goalX, y: goalY });
+            }
+
+            for (let i = monsters.length; i < stageConfig.monsterCount; i++) {
+                let monsterX, monsterY;
+                let validPositionFound = false;
+                while (!validPositionFound) {
+                    monsterX = Math.floor(Math.random() * mazeCols);
+                    monsterY = Math.floor(Math.random() * mazeRows);
+
+                    if ((monsterX !== playerX || monsterY !== playerY) &&
+                        (monsterX !== goalX || monsterY !== goalY) &&
+                        !monsters.some(m => m.x === monsterX && m.y === monsterY) &&
+                        !fruits.some(f => f.x === monsterX && f.y === monsterY) &&
+                        !traps.some(t => t.x === monsterX && t.y === monsterY)) {
+                        validPositionFound = true;
+                    }
+                }
+                monsters.push({ x: monsterX, y: monsterY });
+            }
+        }
+
+        function spawnFruits() {
+            fruits = [];
+            const { mazeCols, mazeRows } = stages[currentStage];
+            const fruitCount = 1;
+
+            for (let i = 0; i < fruitCount; i++) {
+                let fruitX, fruitY;
+                let validPositionFound = false;
+                while (!validPositionFound) {
+                    fruitX = Math.floor(Math.random() * mazeCols);
+                    fruitY = Math.floor(Math.random() * mazeRows);
+
+                    if ((fruitX !== playerX || fruitY !== playerY) &&
+                        (fruitX !== goalX || fruitY !== goalY) &&
+                        !monsters.some(m => m.x === fruitX && m.y === fruitY) &&
+                        !traps.some(t => t.x === fruitX && t.y === fruitY) &&
+                        !fruits.some(f => f.x === fruitX && f.y === fruitY)) {
+                        validPositionFound = true;
+                    }
+                }
+                fruits.push({ x: fruitX, y: fruitY });
+            }
+        }
+
+        function spawnTraps() {
+            traps = [];
+            const stageConfig = stages[currentStage];
+            const { mazeCols, mazeRows } = stageConfig;
+
+            if (stageConfig.trapCount === 0) return;
+
+            for (let i = 0; i < stageConfig.trapCount; i++) {
+                let trapX, trapY;
+                let validPositionFound = false;
+                while (!validPositionFound) {
+                    trapX = Math.floor(Math.random() * mazeCols);
+                    trapY = Math.floor(Math.random() * mazeRows);
+
+                    if ((trapX !== playerX || trapY !== playerY) &&
+                        (trapX !== goalX || trapY !== goalY) &&
+                        !monsters.some(m => m.x === trapX && m.y === trapY) &&
+                        !fruits.some(f => f.x === trapX && f.y === trapY) &&
+                        !traps.some(t => t.x === trapX && t.y === trapY)) {
+                        validPositionFound = true;
+                    }
+                }
+                traps.push({ x: trapX, y: trapY, active: true });
+            }
+        }
+
+        function moveMonsters() {
+            if (!gameRunning || isMonstersFrozen) return;
+
+            const { mazeCols, mazeRows } = stages[currentStage];
+
+            monsters.forEach(monster => {
+                const currentCell = maze[monster.y][monster.x];
+                let possibleMoves = [];
+
+                let bestMove = null;
+                let minDistance = Infinity;
+
+                const directions = [
+                    { dx: 0, dy: -1, wall: currentCell.walls.top },
+                    { dx: 0, dy: 1, wall: currentCell.walls.bottom },
+                    { dx: -1, dy: 0, wall: currentCell.walls.left },
+                    { dx: 1, dy: 0, wall: currentCell.walls.right }
+                ];
+
+                for (const dir of directions) {
+                    const newX = monster.x + dir.dx;
+                    const newY = monster.y + dir.dy;
+
+                    if (!dir.wall && newX >= 0 && newX < mazeCols && newY >= 0 && newY < mazeRows) {
+                        const distance = Math.abs(playerX - newX) + Math.abs(playerY - newY);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            bestMove = { x: newX, y: newY };
+                        }
+                        possibleMoves.push({ x: newX, y: newY });
+                    }
+                }
+
+                if (bestMove) {
+                    monster.x = bestMove.x;
+                    monster.y = bestMove.y;
+                } else if (possibleMoves.length > 0) {
+                    const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+                    monster.x = randomMove.x;
+                    monster.y = randomMove.y;
+                }
+            });
+            draw();
+            checkMonsterCollision();
+            checkPlacedItemCollisionForMonsters();
+        }
+
+        // Novo: Alterna a visibilidade dos monstros
+        function toggleMonsterVisibility() {
+            isMonsterVisible = !isMonsterVisible;
+            draw();
+        }
+
+        // Novo: Alterna a visibilidade das armadilhas
+        function toggleTrapVisibility() {
+            isTrapVisible = !isTrapVisible;
+            draw(); // Redesenha para aplicar a mudança de visibilidade
+        }
+
+        function checkMonsterCollision() {
+            const stageConfig = stages[currentStage];
+            if (!isMonsterVisible) return;
+
+            for (let i = 0; i < monsters.length; i++) {
+                const monster = monsters[i];
+                if (playerX === monster.x && playerY === monster.y) {
+                    if (isInvincible) {
+                        monsters.splice(i, 1);
+                        i--;
+                        showMessageModal(
+                            "Monstro Eliminado!",
+                            "Você usou o poder da fruta!",
+                            null, null, false
+                        );
+                        setTimeout(hideMessageModal, 1500);
+                    } else {
+                        timeRemaining -= stageConfig.timePenaltyOnHit;
+                        playerX = 0;
+                        playerY = 0;
+                        updateUI();
+                        showMessageModal(
+                            "Cuidado!",
+                            `Você foi pego por um monstro! Voltou ao início e perdeu ${stageConfig.timePenaltyOnHit} segundos!`,
+                            null, null, false
+                        );
+                        setTimeout(hideMessageModal, 3000);
+                    }
+                    draw();
+                    return;
+                }
+            }
+        }
+
+        function checkFruitCollision() {
+            for (let i = 0; i < fruits.length; i++) {
+                const fruit = fruits[i];
+                if (playerX === fruit.x && playerY === fruit.y) {
+                    fruits.splice(i, 1);
+                    activateInvincibility(30000); // Fruta dá 30 segundos
+                    showMessageModal(
+                        "Poder Ativado!",
+                        "Você está invencível por 30 segundos!",
+                        null, null, false
+                    );
+                    setTimeout(hideMessageModal, 3000);
+                    draw();
+                    return;
+                }
+            }
+        }
+
+        function checkTrapCollision() {
+            const stageConfig = stages[currentStage];
+            if (!isTrapVisible) return; // Não há colisão se a armadilha não está visível
+
+            for (let i = 0; i < traps.length; i++) {
+                const trap = traps[i];
+                if (playerX === trap.x && playerY === trap.y) {
+                    timeRemaining -= stageConfig.timePenaltyOnHit;
+                    playerX = 0;
+                    playerY = 0;
+                    updateUI();
+                    showMessageModal(
+                        "Armadilha!",
+                        `Você pisou em uma armadilha! Voltou ao início e perdeu ${stageConfig.trapPenaltyOnHit} segundos!`,
+                        null, null, false
+                    );
+                    setTimeout(hideMessageModal, 3000);
+                    draw();
+                    return;
+                }
+            }
+        }
+
+        // Esta função lida com a colisão de itens colocados pelo jogador com monstros.
+        // O jogador não é afetado por itens que ele mesmo coloca.
+        function checkPlacedItemCollisionForMonsters() {
+            for (let i = 0; i < monsters.length; i++) {
+                const monster = monsters[i];
+                for (let j = 0; j < placedItems.length; j++) {
+                    const item = placedItems[j];
+                    if (monster.x === item.x && monster.y === item.y && item.active) {
+                        if (item.type === 'ice_trap_item') {
+                            isMonstersFrozen = true;
+                            showMessageModal("Monstro Congelado!", "Um monstro pisou na Armadilha de Gelo!", null, null, false);
+                            setTimeout(hideMessageModal, 2000);
+                            if (monsterFreezeTimerId) clearTimeout(monsterFreezeTimerId);
+                            monsterFreezeTimerId = setTimeout(() => {
+                                isMonstersFrozen = false;
+                                showMessageModal("Monstros Descongelados!", "Os monstros voltaram a se mover!", null, null, false);
+                                setTimeout(hideMessageModal, 3000);
+                            }, 5000);
+                        } else if (item.type === 'return_mine_item') {
+                            const { mazeCols, mazeRows } = stages[currentStage];
+                            let newMonsterX, newMonsterY;
+                            let validPositionFound = false;
+                            while (!validPositionFound) {
+                                newMonsterX = Math.floor(Math.random() * mazeCols);
+                                newMonsterY = Math.floor(Math.random() * mazeRows);
+                                if ((newMonsterX !== playerX || newMonsterY !== playerY) &&
+                                    !monsters.some(m => m.x === newMonsterX && m.y === newMonsterY && m !== monster) &&
+                                    !fruits.some(f => f.x === newMonsterX && f.y === newMonsterY) &&
+                                    !traps.some(t => t.x === newMonsterX && t.y === newMonsterY) &&
+                                    !placedItems.some(pi => pi.x === newMonsterX && pi.y === newMonsterY && pi !== item)) {
+                                    validPositionFound = true;
+                                }
+                            }
+                            monster.x = newMonsterX;
+                            monster.y = newMonsterY;
+                            showMessageModal("Monstro Teletransportado!", "Um monstro pisou na Mina de Retorno!", null, null, false);
+                            setTimeout(hideMessageModal, 2000);
+                        }
+                        placedItems.splice(j, 1);
+                        draw();
+                        return;
+                    }
+                }
+            }
+        }
+
+
+        function activateInvincibility(duration) {
+            if (isInvincible && invincibilityTimerId) {
+                clearTimeout(invincibilityTimerId);
+                const timeElapsed = performance.now() - (invincibilityTimerStart || performance.now() - invincibilityDuration);
+                invincibilityDuration = Math.max(0, invincibilityDuration - timeElapsed) + duration;
+            } else {
+                invincibilityDuration = duration;
+            }
+            isInvincible = true;
+            invincibilityTimerStart = performance.now();
+
+            if (invincibilityTimerId) {
+                clearTimeout(invincibilityTimerId);
+            }
+            invincibilityTimerId = setTimeout(() => {
+                isInvincible = false;
+                showMessageModal(
+                    "Poder Esgotado!",
+                    "A invencibilidade acabou. Cuidado com os monstros!",
+                    null, null, false
+                );
+                setTimeout(hideMessageModal, 3000);
+                draw();
+            }, invincibilityDuration);
+        }
+
+        function freezeMonsters() {
+            isMonstersFrozen = true;
+            showMessageModal(
+                "Monstros Congelados!",
+                "Os monstros estão paralisados por 7 segundos!",
+                null, null, false
+            );
+            setTimeout(hideMessageModal, 3000);
+
+            if (monsterFreezeTimerId) {
+                clearTimeout(monsterFreezeTimerId);
+            }
+            monsterFreezeTimerId = setTimeout(() => {
+                isMonstersFrozen = false;
+                showMessageModal(
+                    "Monstros Descongelados!",
+                    "Os monstros voltaram a se mover!",
+                    null, null, false
+                );
+                setTimeout(hideMessageModal, 3000);
+            }, 7000);
+            draw();
+        }
+
+        function exterminateMonsters() {
+            monsters = [];
+            showMessageModal("Exterminador Ativado!", "Todos os monstros foram eliminados!", null, null, false);
+            setTimeout(hideMessageModal, 2000);
+            draw();
+        }
+
+        function activateXRayVision() {
+            isXRayActive = true;
+            showMessageModal("Visão de Raio-X Ativada!", "O objetivo está destacado por 5 segundos!", null, null, false);
+            setTimeout(hideMessageModal, 2000);
+
+            if (xRayTimerId) {
+                clearTimeout(xRayTimerId);
+            }
+            xRayTimerId = setTimeout(() => {
+                isXRayActive = false;
+                showMessageModal("Visão de Raio-X Esgotada!", "O objetivo não está mais destacado.", null, null, false);
+                setTimeout(hideMessageModal, 2000);
+            }, 5000);
+            draw();
+        }
+
+        function teleportToStart() {
+            playerX = 0;
+            playerY = 0;
+            showMessageModal("Canal Ativado!", "Teletransportado para o início da fase!", null, null, false);
+            setTimeout(hideMessageModal, 2000);
+            draw();
+        }
+
+        function checkWinCondition() {
+            if (playerX === goalX && playerY === goalY) {
+                gameRunning = false;
+                clearInterval(timerInterval);
+                clearInterval(monsterMoveIntervalId);
+                clearInterval(monsterVisibilityIntervalId);
+                clearInterval(trapVisibilityIntervalId); // Limpa o intervalo de visibilidade das armadilhas
+                clearTimeout(invincibilityTimerId);
+                clearTimeout(monsterFreezeTimerId);
+                clearTimeout(xRayTimerId);
+
+                trophies += 10;
+                updateUI();
+
+                if (currentStage < stages.length - 1) {
+                    showMessageModal(
+                        "Fase Concluída!",
+                        `Você completou a Fase ${currentStage}! Ganhou 10 Troféus! Prepare-se para o próximo desafio.`,
+                        "Próxima Fase",
+                        nextStage,
+                        true
+                    );
+                } else {
+                    gameWin();
+                }
+            }
+        }
+
+        function updateTimer() {
+            timeRemaining--;
+            const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+            const seconds = (timeRemaining % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `Tempo: ${minutes}:${seconds}`;
+
+            if (timeRemaining <= 0) {
+                gameOver();
+            }
+        }
+
+        // --- Funções de Estado do Jogo ---
+        function initGame() {
+            currentStage = 1;
+            trophies = 0;
+            playerInventory = {
+                'invincibility_shield_item': 0,
+                'freeze_monsters_item': 0,
+                'monster_exterminator_item': 0,
+                'blaster_item': 0,
+                'canal_item': 0,
+                'xray_vision_item': 0,
+                'ice_trap_item': 0,
+                'return_mine_item': 0
+            };
+            invincibilityDuration = 30000;
+            startStage(currentStage);
+        }
+
+        function startStage(stageNum) {
+            const stageConfig = stages[stageNum];
+            if (!stageConfig) {
+                console.error("Configuração de fase inválida:", stageNum);
+                return;
+            }
+
+            const maxDimension = Math.max(stageConfig.mazeCols, stageConfig.mazeRows);
+            const maxCanvasWidth = window.innerWidth * 0.9;
+            const maxCanvasHeight = window.innerHeight * 0.6;
+            CELL_SIZE = Math.floor(Math.min(maxCanvasWidth / stageConfig.mazeCols, maxCanvasHeight / stageConfig.mazeRows));
+            CELL_SIZE = Math.max(CELL_SIZE, 10);
+
+            canvas.width = stageConfig.mazeCols * CELL_SIZE;
+            canvas.height = stageConfig.mazeRows * CELL_SIZE;
+
+            generateMaze(stageConfig.mazeRows, stageConfig.mazeCols);
+            playerX = 0;
+            playerY = 0;
+            timeRemaining = stageConfig.timeLimitSeconds;
+            updateUI();
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            if (timerInterval) clearInterval(timerInterval);
+            if (monsterMoveIntervalId) clearInterval(monsterMoveIntervalId);
+            if (monsterVisibilityIntervalId) clearInterval(monsterVisibilityIntervalId);
+            if (trapVisibilityIntervalId) clearInterval(trapVisibilityIntervalId); // Limpa intervalo de armadilhas
+            if (invincibilityTimerId) clearTimeout(invincibilityTimerId);
+            if (monsterFreezeTimerId) clearTimeout(monsterFreezeTimerId);
+            if (xRayTimerId) clearTimeout(xRayTimerId);
+
+            isInvincible = false;
+            isMonstersFrozen = false;
+            isMonsterVisible = true;
+            isTrapVisible = true; // Reseta visibilidade da armadilha para true
+            isXRayActive = false;
+
+            placedItems = [];
+
+            spawnTraps();
+            spawnMonsters();
+            spawnFruits();
+
+            gameRunning = true;
+            timerInterval = setInterval(updateTimer, 1000);
+            if (stageConfig.monsterCount > 0) {
+                monsterMoveIntervalId = setInterval(moveMonsters, stageConfig.monsterMoveInterval);
+                if (stageConfig.monsterVisibilityToggleInterval > 0) {
+                    monsterVisibilityIntervalId = setInterval(toggleMonsterVisibility, stageConfig.monsterVisibilityToggleInterval);
+                }
+            }
+            if (stageConfig.trapCount > 0 && stageConfig.trapVisibilityToggleInterval > 0) { // Inicia piscar armadilhas
+                trapVisibilityIntervalId = setInterval(toggleTrapVisibility, stageConfig.trapVisibilityToggleInterval);
+            }
+            gameLoop();
+
+            showMessageModal(
+                `Fase ${currentStage}: ${stageConfig.message.split(':')[0]}`,
+                stageConfig.message,
+                null, null, false
+            );
+        }
+
+        function nextStage() {
+            currentStage++;
+            startStage(currentStage);
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            cancelAnimationFrame(animationFrameId);
+            clearInterval(timerInterval);
+            clearInterval(monsterMoveIntervalId);
+            clearInterval(monsterVisibilityIntervalId);
+            clearInterval(trapVisibilityIntervalId); // Limpa o intervalo de visibilidade das armadilhas
+            clearTimeout(invincibilityTimerId);
+            clearTimeout(monsterFreezeTimerId);
+            clearTimeout(xRayTimerId);
+            showMessageModal(
+                "Fim de Jogo!",
+                `O tempo acabou na Fase ${currentStage}. Tente novamente!`,
+                "Reiniciar Jogo",
+                initGame,
+                true
+            );
+        }
+
+        function gameWin() {
+            gameRunning = false;
+            cancelAnimationFrame(animationFrameId);
+            clearInterval(timerInterval);
+            clearInterval(monsterMoveIntervalId);
+            clearInterval(monsterVisibilityIntervalId);
+            clearInterval(trapVisibilityIntervalId); // Limpa o intervalo de visibilidade das armadilhas
+            clearTimeout(invincibilityTimerId);
+            clearTimeout(monsterFreezeTimerId);
+            clearTimeout(xRayTimerId);
+            showMessageModal(
+                "Parabéns!",
+                "Você completou todas as 20 fases! Você é um verdadeiro Mestre do Labirinto!",
+                "Jogar Novamente",
+                initGame,
+                true
+            );
+        }
+
+        // --- Funções de Renderização ---
+        function updateUI() {
+            stageDisplay.textContent = `Fase: ${currentStage}`;
+            trophiesDisplay.textContent = `Troféus: ${trophies}`;
+            const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+            const seconds = (timeRemaining % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `Tempo: ${minutes}:${seconds}`;
+
+            updateInventoryDisplay();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawMaze();
+            drawFruits();
+            drawTraps(); // Desenha armadilhas (agora com lógica de piscar)
+            drawPlayer(); // Desenha o jogador (agora com brilho por trás)
+            drawMonsters();
+        }
+
+        // --- Lógica do Joystick ---
+        let isDraggingJoystick = false;
+        let joystickStartX, joystickStartY;
+        let joystickHandleX, joystickHandleY;
+        let joystickCenterX, joystickCenterY;
+        let joystickRadius;
+        const moveThreshold = 20;
+        const moveRepeatDelay = 150;
+        let lastMoveTime = 0;
+        let currentMoveDirection = null;
+
+        function getEventCoords(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        function startDragJoystick(e) {
+            e.preventDefault();
+            if (!gameRunning) return;
+
+            isDraggingJoystick = true;
+            const rect = joystickContainer.getBoundingClientRect();
+            joystickCenterX = rect.left + rect.width / 2;
+            joystickCenterY = rect.top + rect.height / 2;
+            joystickRadius = (joystickContainer.offsetWidth / 2) - (joystickHandle.offsetWidth / 2);
+
+            const coords = getEventCoords(e);
+            joystickStartX = coords.x;
+            joystickStartY = coords.y;
+
+            joystickHandleX = 0;
+            joystickHandleY = 0;
+            updateHandlePosition();
+        }
+
+        function dragJoystick(e) {
+            if (!isDraggingJoystick) return;
+            e.preventDefault();
+
+            const coords = getEventCoords(e);
+            let deltaX = coords.x - joystickStartX;
+            let deltaY = coords.y - joystickStartY;
+
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            if (distance > joystickRadius) {
+                deltaX = (deltaX / distance) * joystickRadius;
+                deltaY = (deltaY / distance) * joystickRadius;
+            }
+
+            joystickHandleX = deltaX;
+            joystickHandleY = deltaY;
+            updateHandlePosition();
+
+            let newDirection = null;
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > moveThreshold) {
+                newDirection = deltaX > 0 ? 'right' : 'left';
+            } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > moveThreshold) {
+                newDirection = deltaY > 0 ? 'down' : 'up';
+            }
+
+            if (newDirection && newDirection !== currentMoveDirection) {
+                currentMoveDirection = newDirection;
+                lastMoveTime = 0;
+            } else if (!newDirection && currentMoveDirection) {
+                currentMoveDirection = null;
+            }
+        }
+
+        function endDragJoystick(e) {
+            if (!isDraggingJoystick) return;
+            e.preventDefault();
+            isDraggingJoystick = false;
+            joystickHandleX = 0;
+            joystickHandleY = 0;
+            updateHandlePosition();
+            currentMoveDirection = null;
+            lastMoveTime = 0;
+        }
+
+        function updateHandlePosition() {
+            joystickHandle.style.transform = `translate(${joystickHandleX}px, ${joystickHandleY}px)`;
+        }
+
+        // --- Event Listeners do Joystick ---
+        joystickContainer.addEventListener('touchstart', startDragJoystick);
+        joystickContainer.addEventListener('touchmove', dragJoystick);
+        joystickContainer.addEventListener('touchend', endDragJoystick);
+
+        joystickContainer.addEventListener('mousedown', startDragJoystick);
+        document.addEventListener('mousemove', dragJoystick);
+        document.addEventListener('mouseup', endDragJoystick);
+
+        // --- Loop Principal do Jogo (Modificado para Joystick) ---
+        function gameLoop() {
+            if (gameRunning) {
+                if (currentMoveDirection && (performance.now() - lastMoveTime > moveRepeatDelay || lastMoveTime === 0)) {
+                    let dx = 0, dy = 0;
+                    switch (currentMoveDirection) {
+                        case 'up': dy = -1; break;
+                        case 'down': dy = 1; break;
+                        case 'left': dx = -1; break;
+                        case 'right': dx = 1; break;
+                    }
+                    movePlayer(dx, dy);
+                    lastMoveTime = performance.now();
+                }
+
+                draw();
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // --- Event Listeners (Teclado - ainda mantido como alternativa) ---
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            switch (e.key) {
+                case 'ArrowUp':
+                case 'w':
+                    movePlayer(0, -1);
+                    break;
+                case 'ArrowDown':
+                case 's':
+                    movePlayer(0, 1);
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                    movePlayer(-1, 0);
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                    movePlayer(1, 0);
+                    break;
+            }
+        });
+
+        // Redimensiona o canvas ao carregar e redimensionar a janela
+        window.addEventListener('resize', () => {
+            if (gameRunning) {
+                gameRunning = false;
+                clearInterval(timerInterval);
+                clearInterval(monsterMoveIntervalId);
+                clearInterval(monsterVisibilityIntervalId);
+                clearInterval(trapVisibilityIntervalId); // Limpa o intervalo de visibilidade das armadilhas
+                clearTimeout(invincibilityTimerId);
+                clearTimeout(monsterFreezeTimerId);
+                clearTimeout(xRayTimerId);
+                cancelAnimationFrame(animationFrameId);
+                startStage(currentStage);
+            } else {
+                const stageConfig = stages[currentStage];
+                const maxDimension = Math.max(stageConfig.mazeCols, stageConfig.mazeRows);
+                const maxCanvasWidth = window.innerWidth * 0.9;
+                const maxCanvasHeight = window.innerHeight * 0.6;
+                CELL_SIZE = Math.floor(Math.min(maxCanvasWidth / stageConfig.mazeCols, maxCanvasHeight / stageConfig.mazeRows));
+                CELL_SIZE = Math.max(CELL_SIZE, 10);
+
+                canvas.width = stageConfig.mazeCols * CELL_SIZE;
+                canvas.height = stageConfig.mazeRows * CELL_SIZE;
+                draw();
+            }
+        });
+
+        // --- Funções do Modal de Mensagem ---
+        function showMessageModal(title, message, buttonText, buttonAction, hasButton = false) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+
+            if (hasButton) {
+                modalButton.textContent = buttonText;
+                modalButton.onclick = () => {
+                    hideMessageModal();
+                    buttonAction();
+                };
+                modalButton.style.display = 'block';
+            } else {
+                modalButton.style.display = 'none';
+                setTimeout(hideMessageModal, 5000);
+            }
+            messageModal.style.display = 'flex';
+        }
+
+        function hideMessageModal() {
+            messageModal.style.display = 'none';
+        }
+
+        // --- Funções da Loja ---
+        function openShopModal() {
+            gameRunning = false;
+            clearInterval(timerInterval);
+            clearInterval(monsterMoveIntervalId);
+            clearInterval(monsterVisibilityIntervalId);
+            clearInterval(trapVisibilityIntervalId); // Pausa visibilidade das armadilhas
+
+            shopTrophiesDisplay.textContent = trophies;
+            updateShopButtons();
+            shopModal.style.display = 'flex';
+        }
+
+        function closeShopModal() {
+            shopModal.style.display = 'none';
+            gameRunning = true;
+            timerInterval = setInterval(updateTimer, 1000);
+            const stageConfig = stages[currentStage];
+            if (stageConfig.monsterCount > 0) {
+                monsterMoveIntervalId = setInterval(moveMonsters, stageConfig.monsterMoveInterval);
+                if (stageConfig.monsterVisibilityToggleInterval > 0) {
+                    monsterVisibilityIntervalId = setInterval(toggleMonsterVisibility, stageConfig.monsterVisibilityToggleInterval);
+                }
+            }
+            if (stageConfig.trapCount > 0 && stageConfig.trapVisibilityToggleInterval > 0) { // Retoma piscar armadilhas
+                trapVisibilityIntervalId = setInterval(toggleTrapVisibility, stageConfig.trapVisibilityToggleInterval);
+            }
+            gameLoop();
+        }
+
+        function updateShopButtons() {
+            buyButtons.forEach(button => {
+                const itemType = button.dataset.item;
+                let cost = 0;
+                if (itemType === 'invincibility_shield_item') {
+                    cost = 50;
+                } else if (itemType === 'freeze_monsters_item') {
+                    cost = 30;
+                } else if (itemType === 'monster_exterminator_item') {
+                    cost = 25;
+                } else if (itemType === 'blaster_item') {
+                    cost = 25;
+                } else if (itemType === 'canal_item') {
+                    cost = 40;
+                } else if (itemType === 'xray_vision_item') {
+                    cost = 70;
+                } else if (itemType === 'ice_trap_item') {
+                    cost = 35;
+                } else if (itemType === 'return_mine_item') {
+                    cost = 60;
+                }
+                button.disabled = trophies < cost;
+            });
+        }
+
+        function buyItem(itemType) {
+            let cost = 0;
+            let itemName = "";
+            if (itemType === 'invincibility_shield_item') {
+                cost = 50;
+                itemName = "Escudo de Invencibilidade";
+            } else if (itemType === 'freeze_monsters_item') {
+                cost = 30;
+                itemName = "Congelar Monstros";
+            } else if (itemType === 'monster_exterminator_item') {
+                cost = 25;
+                itemName = "Exterminador de Monstros";
+            } else if (itemType === 'blaster_item') {
+                cost = 25;
+                itemName = "Blaster";
+            } else if (itemType === 'canal_item') {
+                cost = 40;
+                itemName = "Canal";
+            } else if (itemType === 'xray_vision_item') {
+                cost = 70;
+                itemName = "Visão de Raio-X";
+            } else if (itemType === 'ice_trap_item') {
+                cost = 35;
+                itemName = "Armadilha de Gelo";
+            } else if (itemType === 'return_mine_item') {
+                cost = 60;
+                itemName = "Mina de Retorno";
+            }
+
+            if (trophies >= cost) {
+                trophies -= cost;
+                playerInventory[itemType]++;
+                showMessageModal("Comprado!", `${itemName} adicionado ao inventário!`, null, null, false);
+                setTimeout(hideMessageModal, 2000);
+            } else {
+                showMessageModal("Troféus Insuficientes!", `Você precisa de ${cost} Troféus para comprar ${itemName}.`, null, null, false);
+                setTimeout(hideMessageModal, 2000);
+            }
+            updateUI();
+            shopTrophiesDisplay.textContent = trophies;
+            updateShopButtons();
+        }
+
+        // --- Funções do Inventário ---
+        function updateInventoryDisplay() {
+            inventoryItemsDiv.innerHTML = '';
+
+            const itemDisplayNames = {
+                'invincibility_shield_item': 'Escudo',
+                'freeze_monsters_item': 'Congelar',
+                'monster_exterminator_item': 'Exterminador',
+                'blaster_item': 'Blaster',
+                'canal_item': 'Canal',
+                'xray_vision_item': 'Raio-X',
+                'ice_trap_item': 'Gelo',
+                'return_mine_item': 'Retorno'
+            };
+
+            for (const itemType in playerInventory) {
+                if (playerInventory[itemType] > 0) {
+                    const button = document.createElement('button');
+                    button.className = 'use-item-button';
+                    button.dataset.item = itemType;
+                    button.textContent = `Usar ${itemDisplayNames[itemType]} (${playerInventory[itemType]})`;
+                    button.onclick = () => useItem(button.dataset.item);
+                    inventoryItemsDiv.appendChild(button);
+                }
+            }
+        }
+
+        function useItem(itemType) {
+            if (!gameRunning) {
+                showMessageModal("Jogo Pausado", "Você só pode usar itens durante o jogo!", null, null, false);
+                setTimeout(hideMessageModal, 2000);
+                return;
+            }
+
+            if (playerInventory[itemType] > 0) {
+                playerInventory[itemType]--;
+
+                if (itemType === 'invincibility_shield_item') {
+                    activateInvincibility(5000);
+                } else if (itemType === 'freeze_monsters_item') {
+                    freezeMonsters();
+                } else if (itemType === 'monster_exterminator_item') {
+                    exterminateMonsters();
+                } else if (itemType === 'blaster_item') {
+                    if (monsters.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * monsters.length);
+                        monsters.splice(randomIndex, 1);
+                        showMessageModal("Blaster Ativado!", "Um monstro foi eliminado!", null, null, false);
+                        setTimeout(hideMessageModal, 2000);
+                    } else {
+                        showMessageModal("Nenhum Monstro!", "Não há monstros para usar o Blaster.", null, null, false);
+                        playerInventory[itemType]++; // Devolve o item se não puder ser usado
+                        setTimeout(hideMessageModal, 2000);
+                    }
+                } else if (itemType === 'canal_item') {
+                    teleportToStart();
+                } else if (itemType === 'xray_vision_item') {
+                    activateXRayVision();
+                } else if (itemType === 'ice_trap_item') {
+                    placedItems.push({ x: playerX, y: playerY, type: 'ice_trap_item', active: true });
+                    showMessageModal("Armadilha de Gelo Ativada!", "Uma armadilha de gelo foi colocada!", null, null, false);
+                    setTimeout(hideMessageModal, 2000);
+                } else if (itemType === 'return_mine_item') {
+                    placedItems.push({ x: playerX, y: playerY, type: 'return_mine_item', active: true });
+                    showMessageModal("Mina de Retorno Ativada!", "Uma mina de retorno foi colocada!", null, null, false);
+                    setTimeout(hideMessageModal, 2000);
+                }
+                updateUI();
+            } else {
+                showMessageModal("Item Não Disponível", "Você não tem este item no inventário.", null, null, false);
+                setTimeout(hideMessageModal, 2000);
+            }
+        }
+
+        // --- Event Listeners da Loja ---
+        shopButton.addEventListener('click', openShopModal);
+        shopCloseButton.addEventListener('click', closeShopModal);
+        buyButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const itemType = e.target.dataset.item;
+                buyItem(itemType);
+            });
+        });
+
+        // Inicia o jogo quando a janela carregar
+        window.onload = function () {
+            initGame();
+        };
+    </script>
+</body>
+</html>
