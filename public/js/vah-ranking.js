@@ -30,7 +30,12 @@
     'quebra-tijolos': { title: 'Quebra-Tijolos', unit: 'pontos' },
     'nitro-mania': { title: 'Nitro Mania', unit: 'pontos' },
     'fuga-do-sonic': { title: 'A Fuga do Sonic', unit: 'pontos' },
-    'arthur': { title: 'Arthur: Última Saída', unit: 'fases' }
+    'arthur': { title: 'Arthur: Última Saída', unit: 'fases' },
+    'termo': { title: 'Termo', unit: 'de sequência' },
+    'sudoku': { title: 'Sudoku', unit: 'pontos' },
+    'cobrinha': { title: 'Cobrinha', unit: 'pontos' },
+    'hextris': { title: 'Hextris', unit: 'pontos' },
+    'torre': { title: 'Torre', unit: 'pontos' }
   };
 
   // ---------------------------------------------------------------------------

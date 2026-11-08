@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"><defs><linearGradient id="g" x1="1" y1="0.3" x2="0" y2="0.7"><stop offset="0.2" stop-color="#171D2E"/><stop offset="1" stop-color="#58522C"/></linearGradient></defs><rect width="320" height="180" fill="url(#g)"/>
+<g>
+<rect x="91" y="37" width="16" height="16" rx="5" fill="rgb(115,97,255)"/>
+<rect x="109" y="37" width="16" height="16" rx="5" fill="rgb(122,111,241)"/>
+<rect x="127" y="37" width="16" height="16" rx="5" fill="rgb(130,125,226)"/>
+<rect x="145" y="37" width="16" height="16" rx="5" fill="rgb(137,139,211)"/>
+<rect x="145" y="55" width="16" height="16" rx="5" fill="rgb(145,153,196)"/>
+<rect x="145" y="73" width="16" height="16" rx="5" fill="rgb(152,168,182)"/>
+<rect x="163" y="73" width="16" height="16" rx="5" fill="rgb(160,182,167)"/>
+<rect x="181" y="73" width="16" height="16" rx="5" fill="rgb(167,196,152)"/>
+<rect x="199" y="73" width="16" height="16" rx="5" fill="rgb(175,210,137)"/>
+<rect x="217" y="73" width="16" height="16" rx="5" fill="rgb(183,224,123)"/>
+<rect x="217" y="91" width="16" height="16" rx="5" fill="rgb(190,239,108)"/>
+<rect x="217" y="109" width="16" height="16" rx="5" fill="rgb(199,255,91)"/>
+<circle cx="221" cy="120" r="2.6" fill="#0C0D14"/><circle cx="231" cy="120" r="2.6" fill="#0C0D14"/><circle cx="234" cy="163" r="7" fill="#FF5B8A"/><path d="M280 30l4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1z" fill="#FFD34D"/></g><text x="84" y="160" font-family="Arial,sans-serif" font-size="28" font-weight="900" fill="#FFFFFF" text-anchor="middle">COBRINHA</text></svg>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+	<head>
+		<!--
+			Hextris — jogo original de Logan Engstrom e Garrett Finucane (https://github.com/Hextris/hextris),
+			licenciado sob a GNU GPL v3 (veja LICENSE.md). Modificações VAH Games: textos em português,
+			anúncios, rastreadores, botões de redes sociais e links de lojas removidos, botões do portal
+			e ranking geral adicionados. O código-fonte modificado está nesta mesma pasta.
+		-->
+		<meta charset="utf-8">
+		<title>Hextris · VAH Games</title>
+		<meta name="description" content="Hextris — gire o hexágono e junte blocos da mesma cor. Jogue grátis no VAH Games.">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, minimal-ui"/>
+		<meta name="theme-color" content="#ecf0f1">
+		<link rel="icon" type="image/png" href="/images/site/logo.png">
+		<link rel="stylesheet" type="text/css" href="style/style.css">
+		<style>
+			.vah-top { position: fixed; top: 12px; right: 12px; z-index: 3000; display: flex; gap: 8px; }
+			.vah-btn { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border: 0; border-radius: 9999px;
+				background: #0C0D14; color: #fff; font: 700 14px Outfit, -apple-system, "Segoe UI", sans-serif; text-decoration: none;
+				cursor: pointer; box-shadow: rgba(0,0,0,.25) 0 4px 14px; }
+			.vah-btn:active { opacity: .7; }
+			#gameoverscreen .vah-gameover-note { font-family: Exo; color: #232323; }
+		</style>
+		<script type='text/javascript' src="vendor/hammer.min.js"></script>
+		<script type='text/javascript' src="vendor/js.cookie.js"></script>
+		<script type='text/javascript' src="vendor/jsonfn.min.js"></script>
+		<script type='text/javascript' src="vendor/keypress.min.js"></script>
+		<script type='text/javascript' src="vendor/jquery.js"></script>
+		<script type='text/javascript' src="js/save-state.js"></script>
+		<script type='text/javascript' src="js/view.js"></script>
+		<script type='text/javascript' src="js/wavegen.js"></script>
+		<script type='text/javascript' src="js/math.js"></script>
+		<script type='text/javascript' src="js/Block.js"></script>
+		<script type='text/javascript' src="js/Hex.js"></script>
+		<script type='text/javascript' src="js/Text.js"></script>
+		<script type='text/javascript' src="js/comboTimer.js"></script>
+		<script type='text/javascript' src="js/checking.js"></script>
+		<script type='text/javascript' src='js/update.js'></script>
+		<script type='text/javascript' src='js/render.js'></script>
+		<script type='text/javascript' src="js/input.js"></script>
+		<script type='text/javascript' src="js/main.js"></script>
+		<script type='text/javascript' src="js/initialization.js"></script>
+	</head>
+	<body>
+		<canvas id="canvas"></canvas>
+		<div id="overlay" class="faded overlay"></div>
+		<div id='startBtn' ></div>
+		<div id="helpScreen" class='unselectable'>
+			<div id='inst_main_body'></div>
+		</div>
+		<img id="openSideBar" class='helpText' src="./images/btn_help.svg" alt="Como jogar"/>
+		<div class="faded overlay"></div>
+		<img id="pauseBtn" src="./images/btn_pause.svg" alt="Pausar"/>
+		<img id='restartBtn' src="./images/btn_restart.svg" alt="Recomeçar"/>
+		<div id='HIGHSCORE'>RECORDE</div>
+		<div id='highScoreInGameText'>
+			<div id='highScoreInGameTextHeader'>RECORDE</div><div id='currentHighScore'>0</div>
+		</div>
+		<div id="gameoverscreen">
+			<div id='container'>
+				<div id='gameOverBox' class='GOTitle'>FIM DE JOGO</div>
+				<div id='cScore'>0</div>
+				<div id='highScoresTitle' class='GOTitle'>MELHORES PONTOS</div>
+				<div class='score'><span class='scoreNum'>1.</span> <div id="1place" style="display:inline;">0</div></div>
+				<div class='score'><span class='scoreNum'>2.</span> <div id="2place" style="display:inline;">0</div></div>
+				<div class='score'><span class='scoreNum'>3.</span> <div id="3place" style="display:inline;">0</div></div>
+			</div>
+			<div id='bottomContainer'>
+				<img id='restart' src='./images/btn_restart.svg' height='57px' alt="Jogar de novo">
+				<div id='buttonCont'></div>
+			</div>
+		</div>
+		<div class="vah-top">
+			<a class="vah-btn" href="/">&larr; VAH Games</a>
+		</div>
+		<script src="/js/vah-ranking.js"></script>
+		<script>
+			(function () {
+				var b = VAHRanking.button('hextris');
+				// O botão de pausa do Hextris fica no canto inferior direito: o ranking sobe para o topo
+				b.style.position = 'static';
+				b.style.boxShadow = 'rgba(0,0,0,.25) 0 4px 14px';
+				document.querySelector('.vah-top').appendChild(b);
+				['mousedown', 'touchstart'].forEach(function (t) {
+					document.querySelector('.vah-top').addEventListener(t, function (e) { e.stopPropagation(); }, { passive: true });
+				});
+			})();
+		</script>
+	</body>
+</html>

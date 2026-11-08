@@ -23,11 +23,12 @@ Os workflows ficam em `.github/workflows/`. A chave de acesso ao Firebase é o s
 ```
 src/
   pages/Home.jsx        página inicial (galeria, ranking, comunidade)
-  games/                jogos em React (Xadrez, Damas, Quebra-Tijolos, Lousa Mágica/Telestrations)
+  games/                jogos em React (Xadrez, Damas, Quebra-Tijolos, Termo, Sudoku, Cobrinha, Lousa Mágica/Telestrations)
   components/GamePage.jsx  moldura comum das páginas de jogo
   services/firebase.js  configuração do Firebase (Realtime Database)
 public/
-  games/                jogos em HTML estático (Nitro Mania, A Fuga do Sonic, Arthur, Tetris, Pac-Man, 2048, Fazenda)
+  games/                jogos em HTML estático (Nitro Mania, A Fuga do Sonic, Arthur, Tetris, Pac-Man, 2048, Hextris, Torre, Fazenda)
+  data/termo/           palavras aceitas no Termo (dicionário VERO)
   images/               imagens do portal e dos jogos
 ```
 
@@ -53,6 +54,18 @@ npm run dev
 - Quebra-Tijolos: jogo próprio do VAH Games (`src/games/QuebraTijolos`).
 - 2048: [gabrielecirulli/2048](https://github.com/gabrielecirulli/2048) de Gabriele Cirulli (MIT), com tema
   visual VAH em `public/games/2048/style/vah.css`. Licença em `public/games/2048/LICENSE.txt`.
+- Termo: jogo próprio do VAH Games (`src/games/Termo`). Respostas escolhidas à mão (`respostas.js`);
+  palavras aceitas tiradas do dicionário pt-BR [VERO](https://pt-br.libreoffice.org/projetos/vero/) do LibreOffice
+  (LGPLv3 / MPL), em `public/data/termo/palavras.txt`. Licença em `public/data/termo/LICENCA-VERO.txt`.
+- Sudoku: interface própria com o gerador [sudoku.js](https://github.com/robatron/sudoku.js) de Rob McGuire-Dale
+  (MIT), em `src/games/Sudoku/engine.js`. Licença em `src/games/Sudoku/LICENSE-sudoku.js.txt`.
+- Cobrinha: jogo próprio do VAH Games (`src/games/Cobrinha`). Feito do zero porque, no
+  [javascript-snakes](https://github.com/jakesgordon/javascript-snakes), só o código é MIT: músicas, efeitos,
+  fontes e imagens são de terceiros.
+- Hextris: [Hextris/hextris](https://github.com/Hextris/hextris) de Logan Engstrom e Garrett Finucane (GPL-3.0),
+  traduzido e sem anúncios/rastreadores. O código modificado fica em `public/games/hextris` (licença em `LICENSE.md`).
+- Torre: [iamkun/tower_game](https://github.com/iamkun/tower_game) (MIT), com abertura e fim de jogo novos em
+  português. Licença em `public/games/torre/LICENSE`.
 - Fazenda (Nem que a Vaca Tussa!, Maria vai com as Outras e Ovelha Negra): hub de jogos em grupo do
   repositório [Nem-que-a-Vaca-Tussa](https://github.com/hebercamara/Nem-que-a-Vaca-Tussa).
 
@@ -73,7 +86,7 @@ Cada jogo abre direto com `/games/fazenda/index.html?jogo=vaca`, `?jogo=maria` o
 ## Ranking geral
 
 `public/js/vah-ranking.js` guarda o melhor resultado de cada nome em cada jogo (Tetris, Pac-Man,
-2048, Quebra-Tijolos, Nitro Mania, A Fuga do Sonic e Arthur) no Firebase Realtime Database, em
+2048, Quebra-Tijolos, Nitro Mania, A Fuga do Sonic, Arthur, Termo, Sudoku, Cobrinha, Hextris e Torre) no Firebase Realtime Database, em
 `/rankings/{jogo}/{nome}`. As regras de segurança estão em `database.rules.json`. Enquanto o banco
 não existir ou não responder, o ranking fica salvo só no aparelho de cada jogador.
 
@@ -81,5 +94,8 @@ Para ligar o ranking online (uma vez), no console do Firebase, projeto `vah-game
 1. Realtime Database → Criar banco de dados (`us-central1`). A URL esperada é
    `https://vah-games-default-rtdb.firebaseio.com` (se for outra, troque `DATABASE_URL` no arquivo acima).
 2. Aba Regras → colar `database.rules.json` → Publicar.
+
+Sempre que um jogo novo ganhar ranking, cole e publique as regras de novo: o deploy automático só publica
+o site (Hosting), não as regras do banco.
 
 O rascunho das salas online da Fazenda está em [`docs/salas-online.md`](docs/salas-online.md).

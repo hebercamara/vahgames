@@ -5,6 +5,9 @@ import TelestrationsGame from './games/Telestrations/index';
 import XadrezGame from './games/Xadrez/index';
 import DamasGame from './games/Damas/index';
 import QuebraTijolosGame from './games/QuebraTijolos/index';
+import TermoGame from './games/Termo/index';
+import SudokuGame from './games/Sudoku/index';
+import CobrinhaGame from './games/Cobrinha/index';
 
 // Jogos servidos como páginas estáticas em public/games
 const redirectTo = (url) => {
@@ -20,6 +23,10 @@ const RedirectToTetris = redirectTo('/games/react-tetris/index.html');
 const RedirectToPacman = redirectTo('/games/pacman/index.html');
 // /2048 aponta para o 2048 (gabrielecirulli/2048, MIT)
 const RedirectTo2048 = redirectTo('/games/2048/index.html');
+// /hextris aponta para o Hextris (Hextris/hextris, GPL-3.0)
+const RedirectToHextris = redirectTo('/games/hextris/index.html');
+// /torre aponta para a Torre (iamkun/tower_game, MIT)
+const RedirectToTorre = redirectTo('/games/torre/index.html');
 
 function App() {
   return (
@@ -34,6 +41,11 @@ function App() {
           <Route path="/damas" element={<DamasGame />} />
           <Route path="/quebra-tijolos" element={<QuebraTijolosGame />} />
           <Route path="/2048" element={<RedirectTo2048 />} />
+          <Route path="/termo" element={<TermoGame />} />
+          <Route path="/sudoku" element={<SudokuGame />} />
+          <Route path="/cobrinha" element={<CobrinhaGame />} />
+          <Route path="/hextris" element={<RedirectToHextris />} />
+          <Route path="/torre" element={<RedirectToTorre />} />
         </Routes>
       </div>
     </Router>

@@ -1,0 +1,7 @@
+Palavras aceitas no Termo do VAH Games
+
+palavras.txt: palavras de 5 letras (só letras, sem nomes próprios) extraídas do dicionário
+ortográfico pt-BR VERO, do LibreOffice (pacote npm "dictionary-pt" 4.0.0), expandido com
+o "unmunch" do Hunspell. O VERO é distribuído sob LGPLv3 e MPL: veja LICENCA-VERO.txt.
+
+Copyright (C) 2006 - 2013 Raimundo Santos Moura e colaboradores do projeto VERO.
