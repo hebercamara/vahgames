@@ -92,7 +92,7 @@
                 </div>
             </div>
         </div>
-        <p class="hint">Deslize para os lados para trocar de faixa e para cima para pular (no computador: setas).<br>Cada <b>argola</b> vale 10 pontos e a cada 10 você ganha <b>+100</b>!</p>
+        <p class="hint">Deslize para os lados para trocar de faixa, para cima para pular e para baixo para <b>rolar</b> por baixo dos galhos (no computador: setas).<br>Cada <b>argola</b> vale 10 pontos e a cada 10 você ganha <b>+100</b>!</p>
     </div>
 
     <script type="module">
@@ -119,10 +119,11 @@
         const laneWidth = canvas.width / 3; // 3 lanes
         const playerWidth = 60; // Adjusted for Sonic size
         const playerHeight = 60; // Adjusted for Sonic size
-        const chaserWidth = 50;
-        const chaserHeight = 70;
         const jumpSpeed = 20; // Increased for higher and faster jump
         const gravity = 1; // Increased for faster descent after jump peak
+        const GROUND_Y = canvas.height - playerHeight - 92; // Sonic um pouco acima da borda: o Robotnik vem atrás
+        const ROLL_FRAMES = 40;      // quadros rolando (o jogo anda por quadros, como a pista e os obstáculos)
+        const BALL_FRAME_MS = 45;    // animação rápida da bola
         let obstacleSpawnInterval = 1000; // milliseconds - now dynamic
         const minObstacleSpawnInterval = 400; // Minimum interval to prevent impossible spawns
         const intervalReductionRate = 2; // How much interval reduces per score point (adjust for difficulty)
@@ -137,6 +138,9 @@
         const smallObstacleImage = new Image();
         const largeObstacleImage = new Image();
         const ringSheet = new Image(); // 4 quadros de 17x17 lado a lado
+        const robotnikImage = new Image();
+        const treeImage = new Image();
+        const ballSheet = new Image(); // 4 quadros de 26x68 (bola + rastro)
 
         // Setting direct links for images
         sonicRunFrames[0].src = '/images/fuga-do-sonic/Sonic-Running-1.png';
@@ -145,6 +149,9 @@
         smallObstacleImage.src = '/images/fuga-do-sonic/Obstaculo-pequeno.png';
         largeObstacleImage.src = '/images/fuga-do-sonic/Obstaculo-grande.png';
         ringSheet.src = '/images/fuga-do-sonic/argola.png';
+        robotnikImage.src = '/images/fuga-do-sonic/robotnik.png';
+        treeImage.src = '/images/fuga-do-sonic/arvore.png';
+        ballSheet.src = '/images/fuga-do-sonic/bola.png';
 
         let imagesLoaded = 0;
         const allImages = [
@@ -152,7 +159,10 @@
             roadImage,
             smallObstacleImage,
             largeObstacleImage,
-            ringSheet
+            ringSheet,
+            robotnikImage,
+            treeImage,
+            ballSheet
         ];
         const totalImages = allImages.length;
 
@@ -196,14 +206,28 @@
             this.height = playerHeight;
             this.lane = 1; // 0: left, 1: center, 2: right
             this.x = this.lane * laneWidth + (laneWidth - this.width) / 2;
-            this.y = canvas.height - this.height - 10; // Start at bottom
+            this.y = GROUND_Y;
+            this.rollFrames = 0;
             this.velocityY = 0;
             this.isJumping = false;
             this.frameIndex = 0; // Current frame index for animation
             this.animationSpeed = 8; // Animation speed (lower = faster)
             this.frameCounter = 0; // Counter to control animation speed
 
+            this.isRolling = function() { return this.rollFrames > 0; };
+
             this.draw = function() {
+                if (this.isRolling() && ballSheet.complete && ballSheet.naturalWidth) {
+                    // bola girando: 4 quadros bem rápidos, centro da bola no centro do Sonic
+                    const frame = Math.floor(performance.now() / BALL_FRAME_MS) % 4;
+                    const w = 46, h = w * 68 / 26;
+                    const ballCenter = 23.4 * (h / 68);
+                    ctx.save();
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(ballSheet, frame * 26, 0, 26, 68, this.x + this.width / 2 - w / 2, this.y + this.height / 2 - ballCenter + 8, w, h);
+                    ctx.restore();
+                    return;
+                }
                 // Draw Sonic image if loaded, otherwise draw nothing
                 if (sonicRunFrames[this.frameIndex].complete && sonicRunFrames[this.frameIndex].naturalWidth !== 0) {
                     ctx.drawImage(sonicRunFrames[this.frameIndex], this.x, this.y, this.width, this.height);
@@ -221,12 +245,14 @@
                     this.velocityY += gravity;
 
                     // Land on the ground
-                    if (this.y >= canvas.height - this.height - 10) {
-                        this.y = canvas.height - this.height - 10;
+                    if (this.y >= GROUND_Y) {
+                        this.y = GROUND_Y;
                         this.isJumping = false;
                         this.velocityY = 0;
                     }
                 }
+
+                if (this.rollFrames > 0) this.rollFrames--;
 
                 // Running animation
                 this.frameCounter++;
@@ -236,7 +262,17 @@
                 }
             };
 
+            // Rolar: passa por baixo do galho da árvore. No ar, apertar para baixo faz descer mais rápido.
+            this.roll = function() {
+                if (this.isJumping) {
+                    this.velocityY = Math.max(this.velocityY, 14);
+                    return;
+                }
+                this.rollFrames = ROLL_FRAMES;
+            };
+
             this.jump = function() {
+                if (this.isRolling()) return;
                 if (!this.isJumping) {
                     this.isJumping = true;
                     this.velocityY = -jumpSpeed;
@@ -251,34 +287,28 @@
             };
         }
 
-        // Chaser Object (Dog) - Kept as solid color
+        // Perseguidor: o Robotnik na nave, flutuando atrás do Sonic e seguindo a faixa dele com atraso
         function Chaser() {
-            this.width = chaserWidth;
-            this.height = chaserHeight;
-            this.x = canvas.width / 2 - this.width / 2; // Always in the middle lane behind
-            this.y = canvas.height - this.height + 50; // Slightly behind the player
-            this.color = '#a0aec0'; // Dog color (gray)
-
-            this.draw = function() {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                // Simple dog ears
-                ctx.beginPath();
-                ctx.moveTo(this.x + this.width / 4, this.y);
-                ctx.lineTo(this.x, this.y - this.height / 5);
-                ctx.lineTo(this.x + this.width / 2, this.y - this.height / 10);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.moveTo(this.x + this.width - this.width / 4, this.y);
-                ctx.lineTo(this.x + this.width, this.y - this.height / 5);
-                ctx.lineTo(this.x + this.width / 2, this.y - this.height / 10);
-                ctx.fill();
-            };
+            this.width = 118;
+            this.height = this.width * 198 / 250;
+            this.x = canvas.width / 2 - this.width / 2;
+            this.baseY = canvas.height - this.height + 6;
+            this.t = 0;
 
             this.update = function() {
-                // Chaser moves forward at a slightly slower pace than the game speed
-                // or just stays relative to the player's position
-                // For simplicity, we'll keep its Y static relative to the canvas bottom
+                this.t += 1 / 60;
+                const target = player.x + player.width / 2 - this.width / 2;
+                this.x += (target - this.x) * 0.06;
+            };
+
+            this.draw = function() {
+                const bob = Math.sin(this.t * 3.2) * 5 + Math.sin(this.t * 7.1) * 1.2;
+                if (robotnikImage.complete && robotnikImage.naturalWidth) {
+                    ctx.drawImage(robotnikImage, this.x, this.baseY + bob, this.width, this.height);
+                } else {
+                    ctx.fillStyle = '#C62828';
+                    ctx.fillRect(this.x, this.baseY + bob, this.width, this.height);
+                }
             };
         }
 
@@ -336,7 +366,7 @@
 
         // Fileira de argolas numa faixa sem obstáculo chegando; às vezes em arco por cima de um obstáculo baixo
         function spawnRings(currentTime) {
-            const free = [0, 1, 2].filter(l => !obstacles.some(o => o.lane === l && o.y < 160));
+            const free = [0, 1, 2].filter(l => !obstacles.some(o => o.lanes.includes(l) && o.y < 200));
             const shortAhead = obstacles.filter(o => o.type === 'short' && o.y < 60 && o.y > -60);
             const count = 3 + Math.floor(Math.random() * 4);
             if (shortAhead.length && Math.random() < 0.5) {
@@ -393,10 +423,53 @@
         }
 
         // Obstacle Object
+        // Árvore com galho: o tronco ocupa uma faixa (bate sempre, nem pulando passa) e o galho cobre a
+        // faixa vizinha (só passa rolando). side = 1 galho para a direita, -1 para a esquerda.
+        const TREE_SCALE = 0.9;
+        const TREE_TRUNK_X = 88; // centro do tronco na imagem (230x189), com o galho para a direita
+        function Tree(lane, side) {
+            this.type = 'tree';
+            this.lane = lane;
+            this.side = side;
+            this.branchLane = lane + side;
+            this.lanes = [lane, lane + side];
+            this.width = 230 * TREE_SCALE;
+            this.height = 189 * TREE_SCALE;
+            this.y = -this.height;
+            const laneCenter = lane * laneWidth + laneWidth / 2;
+            const trunk = TREE_TRUNK_X * TREE_SCALE;
+            this.x = side === 1 ? laneCenter - trunk : laneCenter - (this.width - trunk);
+
+            this.update = function() { this.y += gameSpeed; };
+
+            this.draw = function() {
+                if (!(treeImage.complete && treeImage.naturalWidth)) return;
+                ctx.save();
+                if (this.side === 1) {
+                    ctx.drawImage(treeImage, this.x, this.y, this.width, this.height);
+                } else {
+                    ctx.translate(this.x + this.width, this.y);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(treeImage, 0, 0, this.width, this.height);
+                }
+                ctx.restore();
+            };
+
+            // faixa vertical onde a árvore bate (base do tronco e altura do galho)
+            this.hits = function(p) {
+                const top = this.y + this.height * 0.3, bottom = this.y + this.height * 0.82;
+                if (p.y + p.height - 8 < top || p.y + 8 > bottom) return false;
+                if (p.lane === this.lane) return true;                 // tronco
+                if (p.lane === this.branchLane) return !p.isRolling(); // galho: só rolando
+                return false;
+            };
+        }
+
         function Obstacle(lane, type) {
             this.width = (type === 'tall') ? 80 : 60; // Adjust width for image
             this.height = (type === 'tall') ? 80 : 40; // Adjust height for image
             this.lane = lane;
+            this.lanes = [lane];
             this.x = this.lane * laneWidth + (laneWidth - this.width) / 2;
             this.y = -this.height; // Start off-screen at the top
             this.type = type; // Store type to choose correct image
@@ -481,7 +554,14 @@
             const currentObstacleSpawnInterval = Math.max(minObstacleSpawnInterval, 1000 - Math.floor(score / 10) * intervalReductionRate);
 
             // Spawn obstacles
-            if (currentTime - lastObstacleSpawnTime > currentObstacleSpawnInterval) {
+            if (currentTime - lastObstacleSpawnTime > currentObstacleSpawnInterval && score > 25 && Math.random() < 0.18
+                && !obstacles.some(o => o.y < 120)) {
+                // árvore: tronco numa faixa, galho na vizinha; a terceira faixa fica livre
+                const lane = Math.floor(Math.random() * 3);
+                const side = lane === 0 ? 1 : lane === 2 ? -1 : (Math.random() < 0.5 ? 1 : -1);
+                obstacles.push(new Tree(lane, side));
+                lastObstacleSpawnTime = currentTime + 500; // um respiro depois da árvore
+            } else if (currentTime - lastObstacleSpawnTime > currentObstacleSpawnInterval) {
                 const availableLanes = [0, 1, 2];
                 const numObstaclesToSpawn = Math.random() < (score > 100 ? 0.4 : 0.1) ? 2 : 1; // Chance to spawn 2 obstacles after score 100
 
@@ -503,6 +583,10 @@
             // Update and filter obstacles
             obstacles = obstacles.filter(obstacle => {
                 obstacle.update();
+                if (obstacle.type === 'tree') {
+                    if (obstacle.hits(player)) { endGame(); return false; }
+                    return obstacle.y < canvas.height + obstacle.height;
+                }
                 // Check for collision
                 if (checkCollision(player, obstacle)) {
                     // If player is jumping
@@ -550,8 +634,8 @@
 
             obstacles.forEach(obstacle => obstacle.draw());
             rings.forEach(ring => ring.draw(currentTime));
+            chaser.draw(); // o Robotnik fica atrás do Sonic
             player.draw();
-            chaser.draw(); // Chaser is drawn behind the player
             drawPopups();
 
             requestAnimationFrame(gameLoop);
@@ -602,8 +686,10 @@
                     player.changeLane(-1); // Swipe left
                 }
             } else { // Vertical swipe (jump)
-                if (dy < 0) { // Swiping upwards
+                if (dy < -20) { // Swiping upwards
                     player.jump(); // Trigger jump
+                } else if (dy > 20) { // para baixo: rolar
+                    player.roll();
                 }
             }
         });
@@ -633,8 +719,10 @@
                     player.changeLane(-1); // Drag left
                 }
             } else { // Vertical drag (jump)
-                if (dy < 0) { // Drag upwards
+                if (dy < -20) { // Drag upwards
                     player.jump(); // Trigger jump
+                } else if (dy > 20) { // para baixo: rolar
+                    player.roll();
                 }
             }
         });
@@ -645,6 +733,11 @@
             switch (e.key) {
                 case 'ArrowUp':
                     player.jump();
+                    break;
+                case 'ArrowDown':
+                case 's':
+                    e.preventDefault();
+                    player.roll();
                     break;
                 case 'ArrowLeft':
                     player.changeLane(-1);
