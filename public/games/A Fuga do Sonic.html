@@ -634,8 +634,8 @@
 
             obstacles.forEach(obstacle => obstacle.draw());
             rings.forEach(ring => ring.draw(currentTime));
-            chaser.draw(); // o Robotnik fica atrás do Sonic
             player.draw();
+            chaser.draw(); // o Robotnik está mais perto de quem olha: desenhado por cima do Sonic (e da bola)
             drawPopups();
 
             requestAnimationFrame(gameLoop);
