@@ -110,6 +110,7 @@ export default function CobrinhaGame() {
   const canvasRef = useRef(null);
   const gameRef = useRef(null);
   const touchRef = useRef(null);
+  const boardRef = useRef(null);
   const [speedKey, setSpeedKey] = useState(() => {
     const v = readStore('vah-cobrinha-velocidade', 'normal');
     return SPEEDS[v] ? v : 'normal';
@@ -342,21 +343,42 @@ export default function CobrinhaGame() {
     return () => window.removeEventListener('keydown', down);
   }, [turn, primary]);
 
-  // Deslizar o dedo
-  const onTouchStart = (e) => {
-    const t = e.touches[0];
-    touchRef.current = { x: t.clientX, y: t.clientY };
-  };
-  const onTouchMove = (e) => {
-    const start = touchRef.current;
-    if (!start) return;
-    const t = e.touches[0];
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
-    turn(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
-    touchRef.current = { x: t.clientX, y: t.clientY };
-  };
+  // Deslizar o dedo: começa no quadro do jogo (inclusive sobre o aviso de início/pausa) e,
+  // enquanto a partida corre, vale em qualquer lugar da tela. O gesto não rola a página.
+  useEffect(() => {
+    const SWIPE = 24;
+    const start = (e) => {
+      if (e.touches.length !== 1 || document.querySelector('.vahr-overlay')) return;
+      const playing = gameRef.current?.status === 'playing';
+      if (!playing && !boardRef.current?.contains(e.target)) return;
+      const t = e.touches[0];
+      touchRef.current = { x: t.clientX, y: t.clientY };
+    };
+    const move = (e) => {
+      const s = touchRef.current;
+      if (!s) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      const dx = t.clientX - s.x;
+      const dy = t.clientY - s.y;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE) return;
+      turn(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up');
+      touchRef.current = { x: t.clientX, y: t.clientY };
+    };
+    const end = () => {
+      touchRef.current = null;
+    };
+    window.addEventListener('touchstart', start, { passive: true });
+    window.addEventListener('touchmove', move, { passive: false });
+    window.addEventListener('touchend', end);
+    window.addEventListener('touchcancel', end);
+    return () => {
+      window.removeEventListener('touchstart', start);
+      window.removeEventListener('touchmove', move);
+      window.removeEventListener('touchend', end);
+      window.removeEventListener('touchcancel', end);
+    };
+  }, [turn]);
 
   const overlayText = {
     ready: { title: 'Cobrinha', action: 'Começar', hint: 'ou aperte uma seta / deslize o dedo' },
@@ -394,15 +416,8 @@ export default function CobrinhaGame() {
     >
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)] lg:justify-center">
         <div className="mx-auto flex w-full max-w-[480px] flex-col gap-4">
-          <div className="relative overflow-hidden rounded-sm border-2 border-line">
-            <canvas
-              ref={canvasRef}
-              className="block aspect-square h-auto w-full touch-none select-none"
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-              onTouchEnd={() => { touchRef.current = null; }}
-              aria-label="Área do jogo Cobrinha"
-            />
+          <div ref={boardRef} className="relative touch-none select-none overflow-hidden rounded-sm border-2 border-line">
+            <canvas ref={canvasRef} className="block aspect-square h-auto w-full" aria-label="Área do jogo Cobrinha" />
             {overlayText && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-canvas/70 p-6 text-center">
                 <p className="font-display text-[26px] font-black uppercase text-ink">{overlayText.title}</p>
@@ -455,7 +470,7 @@ export default function CobrinhaGame() {
           <div className="panel">
             <h2 className="subheading mb-3">Como jogar</h2>
             <ul className="list-disc space-y-1 pl-5 text-body-md text-body">
-              <li>Use as setas (ou W, A, S, D), deslize o dedo ou use o direcional na tela.</li>
+              <li>Use as setas (ou W, A, S, D), deslize o dedo na tela ou use o direcional.</li>
               <li>Coma as frutas para crescer. A cobrinha acelera um pouco a cada fruta.</li>
               <li>A cada 5 frutas aparece uma ⭐ estrela: vale 50 pontos, mas some rápido!</li>
               <li>Não bata nas paredes nem no próprio corpo. Espaço ou P pausa.</li>

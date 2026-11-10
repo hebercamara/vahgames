@@ -4,12 +4,13 @@
     <!--
       Tetris — baseado em react-tetris de Chvin (https://github.com/chvin/react-tetris),
       licenciado sob Apache-2.0. Modificações VAH Games: tradução para português (pt) como idioma
-      padrão, textos desta página e botão de voltar ao portal. Veja LICENSE-NOTICE.txt.
+      padrão, textos desta página, botão de voltar ao portal, cores do VAH Games e
+      viewport padrão para ocupar a tela inteira do celular. Veja LICENSE-NOTICE.txt.
     -->
     <meta name="renderer" content="webkit">
     <meta name="description" content="Tetris — jogo de blocos do portal VAH Games" />
     <meta name="format-detection" content="telephone=no"/>
-    <script>;(function(){var w=parseInt(window.screen.width),s=w/640,u=navigator.userAgent.toLowerCase(),m='<meta name="viewport" content="width=640,';if(/android (\d+\.\d+)/.test(u)){if(parseFloat(RegExp.$1)>2.3)m+='minimum-scale='+s+',maximum-scale='+s+',';}else{m+='user-scalable=no,';}m+='target-densitydpi=device-dpi">';document.write(m);}());</script>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <meta charset="UTF-8">
     <title>Tetris</title>
     <link href="./loader.css" rel="stylesheet" />
@@ -19,7 +20,45 @@
         background:#111827;color:#fff;font:600 14px/1 system-ui,sans-serif;text-decoration:none;
         box-shadow:0 2px 8px rgba(0,0,0,.4)}
       .vah-voltar:hover{background:#16a34a}
+
+      /* ---- Visual VAH Games: cores do portal e só o minigame na tela ---- */
+      html,body{height:100%}
+      body{background:#0C0D14 linear-gradient(285deg,#171D2E 20%,#3D2F73 100%) fixed;font-family:Outfit,-apple-system,"Segoe UI",sans-serif;
+        -webkit-tap-highlight-color:transparent;touch-action:manipulation}
+      /* teclas de teclado desenhadas fora do minigame, QR code e link "Hub" */
+      ._2iIk{display:none!important}
+      /* corpo do minigame */
+      ._3Lk6{background:linear-gradient(170deg,#7361FF 0%,#6842FF 45%,#4B2FC9 100%);box-shadow:inset 0 0 0 3px rgba(255,255,255,.18),inset 0 0 40px rgba(255,255,255,.12),0 20px 60px rgba(0,0,0,.6)}
+      ._1fjB{border-color:#0C0D14}
+      ._2OLA h1{color:#fff;font-family:Outfit,sans-serif;font-weight:800;letter-spacing:2px}
+      ._2OLA .DOXx span{background:#0C0D14}
+      ._2OLA b{border-color:transparent}
+      ._2OLA b:after{background:transparent}
+      ._2OLA b.c{border-color:#C7FF5B}
+      ._2OLA b.c:after{background:#C7FF5B}
+      /* tela (LCD escuro, peças em verde-limão) */
+      ._2iZA{border-color:#1F2033 #8F82E8 #8F82E8 #1F2033}
+      ._2iZA ._2lJh{background:#141526;border-color:#0C0D14;color:#E5E6EE}
+      ._2lJh b{border-color:#2A2C44}
+      ._2lJh b:after{background:#2A2C44}
+      ._2lJh b.c{border-color:#C7FF5B}
+      ._2lJh b.c:after{background:#C7FF5B}
+      ._2lJh b.d{border-color:#FF5470}
+      ._2lJh b.d:after{background:#FF5470}
+      ._6pVK{border-color:#3A3C5A}
+      ._1deS p{color:#BDBFCE}
+      ._20Jp p{color:#C7FF5B;text-shadow:none}
+      /* números, ícones e o dragão vêm de uma imagem preta: invertidos para aparecer no fundo escuro */
+      .iHKP,._37mu,.EHci,._20Jp .AFTs{filter:invert(1) brightness(1.1)}
+      /* botões */
+      ._1pg0{color:#fff;font-weight:700}
+      ._1pg0 i{border-color:#0C0D14}
+      ._1pg0._23pZ i{background:#2A2C44}
+      ._1pg0.RBZg i{background:#C7FF5B}
+      ._1pg0._3kg_ i{background:#FF5470}
+      ._1pg0._2TvZ em{border-color:transparent transparent #fff}
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Unbounded:wght@900&display=swap" rel="stylesheet">
 </head>
 <body>
 <a class="vah-voltar" href="/">&larr; VAH Games</a>

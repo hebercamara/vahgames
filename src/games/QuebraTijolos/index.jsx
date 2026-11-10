@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import GamePage from '../../components/GamePage';
+import { LEVELS, WORLDS, worldOf } from './levels';
 
 // Quebra-Tijolos — jogo próprio do VAH Games (gênero "brick breaker"), desenhado em canvas.
 // Controles: mouse / dedo arrastando, ou setas e A/D. Espaço, clique ou toque lançam a bola.
@@ -20,16 +21,10 @@ const BASE_SPEED = 330;
 const MAX_SPEED = 620;
 const LIVES = 3;
 
-// '.' vazio · 1-3 resistência do tijolo
-const LEVELS = [
-  ['..........', '1111111111', '1111111111', '1111111111', '1111111111', '1111111111'],
-  ['....22....', '...2112...', '..211112..', '.21111112.', '2111111112', '1111111111'],
-  ['2.2.2.2.2.', '.1.1.1.1.1', '2.2.2.2.2.', '.1.1.1.1.1', '2.2.2.2.2.', '.1.1.1.1.1'],
-  ['3333333333', '3........3', '3.222222.3', '3.2.11.2.3', '3.222222.3', '3........3', '3333333333'],
-  ['1221221221', '2332332332', '3113113113', '1221221221', '2332332332', '3113113113', '1111111111'],
-];
-
 const BRICK_COLORS = { 1: '#A48EFF', 2: '#7361FF', 3: '#6842FF' };
+const SPECIAL_COLORS = { steel: '#878A9E', bomb: '#FF9F1C', gold: '#F7D354', power: '#C7FF5B' };
+const brickColor = (br) => (br.type === 'normal' ? BRICK_COLORS[br.max] : SPECIAL_COLORS[br.type]);
+const TILE_TYPES = { '#': 'steel', '*': 'bomb', $: 'gold', '?': 'power' };
 const POWERS = {
   W: { color: '#C7FF5B', label: 'W', name: 'Raquete larga' },
   M: { color: '#A48EFF', label: 'M', name: 'Multibola' },
@@ -44,6 +39,22 @@ const readBest = () => {
     return 0;
   }
 };
+// Fases liberadas (a maior fase alcançada fica salva no aparelho)
+const readUnlocked = () => {
+  try {
+    return Math.min(LEVELS.length - 1, Number(localStorage.getItem('vah-quebra-tijolos-fase')) || 0);
+  } catch {
+    return 0;
+  }
+};
+const saveUnlocked = (v) => {
+  try {
+    localStorage.setItem('vah-quebra-tijolos-fase', String(v));
+  } catch {
+    /* sem armazenamento local */
+  }
+};
+
 const saveBest = (v) => {
   try {
     localStorage.setItem('vah-quebra-tijolos-recorde', String(v));
@@ -53,17 +64,21 @@ const saveBest = (v) => {
 };
 
 function buildBricks(levelIndex) {
-  const rows = LEVELS[levelIndex];
+  const { rows } = LEVELS[levelIndex];
   const bricks = [];
   rows.forEach((row, r) => {
     [...row].forEach((ch, c) => {
       if (ch === '.') return;
-      const hp = Number(ch);
-      bricks.push({ x: SIDE + c * (BRICK_W + GAP), y: TOP + r * (BRICK_H + GAP), w: BRICK_W, h: BRICK_H, hp, max: hp });
+      const type = TILE_TYPES[ch] || 'normal';
+      const hp = type === 'normal' ? Number(ch) : 1;
+      const x = SIDE + c * (BRICK_W + GAP);
+      bricks.push({ x, baseX: x, y: TOP + r * (BRICK_H + GAP), w: BRICK_W, h: BRICK_H, hp, max: hp, type, row: r, col: c });
     });
   });
   return bricks;
 }
+
+const isCleared = (bricks) => bricks.every((br) => br.type === 'steel' || br.hp <= 0);
 
 function newBall(paddle, speed) {
   return { x: paddle.x, y: PADDLE_Y - BALL_R - 1, vx: 0, vy: 0, speed, stuck: true };
@@ -84,6 +99,7 @@ export default function QuebraTijolosGame() {
   const gameRef = useRef(null);
   const keysRef = useRef({ left: false, right: false });
   const [hud, setHud] = useState({ score: 0, lives: LIVES, level: 1, best: readBest(), status: 'ready', message: '' });
+  const [unlocked, setUnlocked] = useState(readUnlocked);
 
   const syncHud = useCallback(() => {
     const g = gameRef.current;
@@ -96,8 +112,9 @@ export default function QuebraTijolosGame() {
 
   const startLevel = useCallback((level, keepScore = true) => {
     const prev = gameRef.current;
-    const paddle = { x: W / 2, w: PADDLE_W, wideUntil: 0 };
-    const speed = BASE_SPEED + level * 25;
+    const cfg = LEVELS[level];
+    const paddle = { x: W / 2, w: cfg.paddle || PADDLE_W, base: cfg.paddle || PADDLE_W, wideUntil: 0 };
+    const speed = cfg.speed || BASE_SPEED;
     gameRef.current = {
       level,
       score: keepScore && prev ? prev.score : 0,
@@ -111,7 +128,7 @@ export default function QuebraTijolosGame() {
       speed,
       slowUntil: 0,
       status: 'ready',
-      message: `Fase ${level + 1}`,
+      message: `Fase ${level + 1} · ${cfg.name}`,
       time: 0,
     };
     syncHud();
@@ -185,17 +202,41 @@ export default function QuebraTijolosGame() {
       }
     };
 
+    const dropPower = (g, brick) => {
+      const types = Object.keys(POWERS);
+      g.drops.push({ x: brick.x + brick.w / 2, y: brick.y, type: types[Math.floor(Math.random() * types.length)] });
+    };
+
+    const pts = (g, n) => n * (worldOf(g.level) + 1);
+
+    // Quebra o tijolo de vez (também usado pelas explosões)
+    const destroyBrick = (g, brick) => {
+      if (brick.hp <= 0 || brick.type === 'steel') return;
+      brick.hp = 0;
+      g.score += pts(g, brick.type === 'gold' ? 250 : 15);
+      burst(g, brick.x + brick.w / 2, brick.y + brick.h / 2, brickColor(brick));
+      if (brick.type === 'gold' || brick.type === 'power') dropPower(g, brick);
+      else if (brick.type === 'normal' && Math.random() < 0.12) dropPower(g, brick);
+      if (brick.type === 'bomb') {
+        g.shake = 0.25;
+        for (let k = 0; k < 3; k++) burst(g, brick.x + brick.w / 2, brick.y + brick.h / 2, '#FFD34D');
+        g.bricks.forEach((nb) => {
+          if (Math.abs(nb.row - brick.row) <= 1 && Math.abs(nb.col - brick.col) <= 1) destroyBrick(g, nb);
+        });
+      }
+    };
+
     const hitBrick = (g, brick, ball) => {
-      brick.hp -= 1;
-      g.score += 10 * (g.level + 1);
+      if (brick.type === 'steel') {
+        for (let i = 0; i < 3; i++) g.particles.push({ x: ball.x, y: ball.y, vx: (Math.random() - 0.5) * 160, vy: (Math.random() - 0.5) * 160, life: 0.25, color: '#DCDFE8' });
+        return;
+      }
       ball.speed = Math.min(MAX_SPEED, ball.speed + 3);
+      brick.hp -= 1;
+      g.score += pts(g, 10);
       if (brick.hp <= 0) {
-        g.score += 5;
-        burst(g, brick.x + brick.w / 2, brick.y + brick.h / 2, BRICK_COLORS[brick.max]);
-        if (Math.random() < 0.14) {
-          const types = Object.keys(POWERS);
-          g.drops.push({ x: brick.x + brick.w / 2, y: brick.y, type: types[Math.floor(Math.random() * types.length)] });
-        }
+        brick.hp = 1;
+        destroyBrick(g, brick);
       }
       syncHud();
     };
@@ -206,7 +247,17 @@ export default function QuebraTijolosGame() {
       // raquete pelo teclado
       const dir = (keysRef.current.right ? 1 : 0) - (keysRef.current.left ? 1 : 0);
       if (dir) p.x += dir * 520 * dt;
-      p.w = g.time < p.wideUntil ? PADDLE_W * 1.5 : PADDLE_W;
+      p.w = g.time < p.wideUntil ? p.base * 1.5 : p.base;
+      if (g.shake > 0) g.shake -= dt;
+      // fileiras que deslizam (vizinhas em sentidos opostos)
+      const drift = LEVELS[g.level].drift;
+      if (drift) {
+        g.bricks.forEach((br) => {
+          if (!drift.rows.includes(br.row)) return;
+          const dirSign = br.row % 2 === 0 ? 1 : -1;
+          br.x = br.baseX + dirSign * Math.sin(g.time * drift.speed) * drift.amp;
+        });
+      }
       p.x = Math.max(p.w / 2 + 4, Math.min(W - p.w / 2 - 4, p.x));
       const slow = g.time < g.slowUntil ? 0.65 : 1;
 
@@ -308,18 +359,37 @@ export default function QuebraTijolosGame() {
           g.message = 'Você perdeu uma vida';
         }
         syncHud();
-      } else if (g.bricks.every((br) => br.hp <= 0)) {
-        g.score += 100 * (g.level + 1);
+      } else if (isCleared(g.bricks)) {
+        g.score += pts(g, 100) + g.lives * pts(g, 20);
         g.status = g.level + 1 >= LEVELS.length ? 'victory' : 'cleared';
-        g.message = g.status === 'victory' ? 'Você venceu todas as fases! 🏆' : `Fase ${g.level + 1} completa!`;
+        let bonus = '';
+        // a cada 5 fases vencidas, uma vida extra
+        if (g.status === 'cleared' && (g.level + 1) % 5 === 0 && g.lives < 6) {
+          g.lives += 1;
+          bonus = ' +1 vida ♥';
+        }
+        const nextWorld = g.status === 'cleared' && WORLDS.find((w) => w.from === g.level + 1);
+        g.message =
+          g.status === 'victory'
+            ? 'Você venceu as 30 fases! 🏆'
+            : nextWorld
+              ? `Mundo completo! Próximo: ${nextWorld.name}${bonus}`
+              : `Fase ${g.level + 1} completa!${bonus}`;
         if (g.status === 'victory') window.VAHRanking?.submit('quebra-tijolos', g.score);
+        const next = Math.min(LEVELS.length - 1, g.level + 1);
+        if (next > readUnlocked()) {
+          saveUnlocked(next);
+          setUnlocked(next);
+        }
         syncHud();
       }
     };
 
     const draw = (g) => {
+      ctx.save();
+      if (g.shake > 0) ctx.translate((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
       ctx.fillStyle = '#0C0D14';
-      ctx.fillRect(0, 0, W, H);
+      ctx.fillRect(-8, -8, W + 16, H + 16);
       // faixa superior
       const grad = ctx.createLinearGradient(W, 0, 0, 40);
       grad.addColorStop(0.2, 'rgb(23,29,46)');
@@ -340,13 +410,70 @@ export default function QuebraTijolosGame() {
       // tijolos
       g.bricks.forEach((br) => {
         if (br.hp <= 0) return;
-        ctx.fillStyle = BRICK_COLORS[br.hp];
+        const cx = br.x + br.w / 2;
+        const cy = br.y + br.h / 2;
+        if (br.type === 'normal') {
+          ctx.fillStyle = BRICK_COLORS[br.hp];
+          roundRect(ctx, br.x, br.y, br.w, br.h, 5);
+          ctx.fill();
+          if (br.max > 1) {
+            ctx.fillStyle = 'rgba(255,255,255,0.25)';
+            for (let i = 0; i < br.hp; i++) ctx.fillRect(br.x + 6 + i * 7, cy - 2, 4, 4);
+          }
+          return;
+        }
+        if (br.type === 'steel') {
+          const sg = ctx.createLinearGradient(0, br.y, 0, br.y + br.h);
+          sg.addColorStop(0, '#B4B7C8');
+          sg.addColorStop(1, '#5E6075');
+          ctx.fillStyle = sg;
+          roundRect(ctx, br.x, br.y, br.w, br.h, 3);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(12,13,20,0.55)';
+          [[5, 5], [br.w - 7, 5], [5, br.h - 7], [br.w - 7, br.h - 7]].forEach(([dx, dy]) => ctx.fillRect(br.x + dx, br.y + dy, 2, 2));
+          return;
+        }
+        if (br.type === 'gold') {
+          const shine = 0.5 + 0.5 * Math.sin(g.time * 4 + br.col);
+          const gg = ctx.createLinearGradient(br.x, br.y, br.x + br.w, br.y + br.h);
+          gg.addColorStop(0, '#FFE58A');
+          gg.addColorStop(shine, '#FFF8D6');
+          gg.addColorStop(1, '#D9A520');
+          ctx.fillStyle = gg;
+          roundRect(ctx, br.x, br.y, br.w, br.h, 5);
+          ctx.fill();
+          ctx.fillStyle = '#7A5200';
+          ctx.font = '900 12px Outfit, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('$', cx, cy + 1);
+          return;
+        }
+        if (br.type === 'bomb') {
+          const pulse = 0.75 + 0.25 * Math.sin(g.time * 8 + br.col);
+          ctx.fillStyle = `rgba(255,159,28,${pulse})`;
+          roundRect(ctx, br.x, br.y, br.w, br.h, 5);
+          ctx.fill();
+          ctx.fillStyle = '#3A1A00';
+          ctx.font = '900 13px Outfit, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('✱', cx, cy + 1);
+          return;
+        }
+        // surpresa
+        ctx.fillStyle = '#1F2033';
         roundRect(ctx, br.x, br.y, br.w, br.h, 5);
         ctx.fill();
-        if (br.max > 1) {
-          ctx.fillStyle = 'rgba(255,255,255,0.25)';
-          for (let i = 0; i < br.hp; i++) ctx.fillRect(br.x + 6 + i * 7, br.y + br.h / 2 - 2, 4, 4);
-        }
+        ctx.strokeStyle = '#C7FF5B';
+        ctx.lineWidth = 2;
+        roundRect(ctx, br.x + 1, br.y + 1, br.w - 2, br.h - 2, 4);
+        ctx.stroke();
+        ctx.fillStyle = '#C7FF5B';
+        ctx.font = '900 12px Outfit, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('?', cx, cy + 1);
       });
 
       // itens
@@ -382,6 +509,7 @@ export default function QuebraTijolosGame() {
         ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
         ctx.fill();
       });
+      ctx.restore();
     };
 
     const frame = (now) => {
@@ -493,11 +621,57 @@ export default function QuebraTijolosGame() {
             ))}
           </div>
           <div className="panel">
+            <h2 className="subheading mb-1">Fases</h2>
+            <p className="mb-3 text-body-md text-muted">
+              Mundo {worldOf(hud.level - 1) + 1}: {WORLDS[worldOf(hud.level - 1)].name} · {LEVELS[hud.level - 1].name}
+            </p>
+            <div className="flex flex-col gap-3">
+              {WORLDS.map((world, wi) => {
+                const end = WORLDS[wi + 1]?.from ?? LEVELS.length;
+                return (
+                  <div key={world.name}>
+                    <p className="mb-1.5 text-caption uppercase" style={{ color: world.color }}>
+                      {wi + 1}. {world.name}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {LEVELS.slice(world.from, end).map((lv, k) => {
+                        const idx = world.from + k;
+                        const locked = idx > unlocked;
+                        const current = idx === hud.level - 1;
+                        return (
+                          <button
+                            key={lv.name}
+                            type="button"
+                            title={locked ? 'Vença a fase anterior para liberar' : lv.name}
+                            aria-label={`Fase ${idx + 1}: ${lv.name}${locked ? ' (bloqueada)' : ''}`}
+                            disabled={locked}
+                            onClick={() => {
+                              gameRef.current = null;
+                              startLevel(idx, false);
+                            }}
+                            className={`h-9 w-9 rounded-full text-[13px] font-black transition ${
+                              current ? 'bg-lime text-lime-ink' : locked ? 'bg-white/[0.04] text-white/25' : 'bg-white/10 text-ink hover:bg-white/20'
+                            }`}
+                          >
+                            {locked ? '🔒' : idx + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-caption text-muted">Escolher uma fase começa uma partida nova a partir dela.</p>
+          </div>
+          <div className="panel">
             <h2 className="subheading mb-3">Como jogar</h2>
             <ul className="list-disc space-y-1 pl-5 text-body-md text-body">
               <li>Mova a raquete com o mouse, arrastando o dedo ou com as setas (A/D).</li>
               <li>Clique, toque ou aperte Espaço para lançar a bola. P pausa.</li>
               <li>Tijolos mais escuros precisam de mais batidas.</li>
+              <li>Aço não quebra. Explosivo ✱ destrói os vizinhos. Ouro $ vale muitos pontos e ? sempre solta um item.</li>
+              <li>A cada 5 fases vencidas você ganha uma vida extra.</li>
               <li>O ângulo da bola depende de onde ela bate na raquete.</li>
             </ul>
           </div>
