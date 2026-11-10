@@ -78,7 +78,7 @@ const GAMES = [
   {
     id: 'damas',
     title: 'Damas',
-    image: '/images/site/capa-damas.svg',
+    image: '/images/site/capa-damas.webp',
     rating: 5,
     gameLink: '/damas',
     category: 'tabuleiro',
