@@ -1,164 +1,174 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
+// Lousa: o desenho tem sempre 800x600 por dentro (fica igual em qualquer aparelho) e é mostrado
+// no tamanho que cabe na tela. Celular: quadro na largura toda e ferramentas embaixo.
+// Tablet/computador: quadro grande e ferramentas numa coluna ao lado.
+
+const BOARD_W = 800;
+const BOARD_H = 600;
+const CHALK_BG = '#2F4F4F';
+
+const TOOLS = [
+  { id: 'branco', color: '#ffffff', width: 4, label: 'Giz branco', swatch: 'bg-white' },
+  { id: 'amarelo', color: '#FFD700', width: 4, label: 'Giz amarelo', swatch: 'bg-yellow-400' },
+  { id: 'vermelho', color: '#FF6347', width: 4, label: 'Giz vermelho', swatch: 'bg-red-500' },
+  { id: 'azul', color: '#7FD3FF', width: 4, label: 'Giz azul', swatch: 'bg-sky-300' },
+  { id: 'apagador', color: CHALK_BG, width: 28, label: 'Apagador', swatch: 'bg-gray-600', icon: '🧽' },
+];
 
 const CanvasBoard = ({ wordToDraw, onFinishTurn }) => {
-    const canvasRef = useRef(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [color, setColor] = useState('#ffffff'); // Chalk white
-    const [lineWidth, setLineWidth] = useState(3);
-    const [timeLeft, setTimeLeft] = useState(60);
+  const canvasRef = useRef(null);
+  const drawingRef = useRef(false);
+  const finishedRef = useRef(false);
+  const [tool, setTool] = useState(TOOLS[0]);
+  const [timeLeft, setTimeLeft] = useState(60);
 
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    handleFinish();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
+  const paintBackground = () => {
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.fillStyle = CHALK_BG;
+    ctx.fillRect(0, 0, BOARD_W, BOARD_H);
+  };
 
-    const startDrawing = ({ nativeEvent }) => {
-        const { offsetX, offsetY } = nativeEvent;
-        const ctx = canvasRef.current.getContext('2d');
-        ctx.strokeStyle = color;
-        ctx.lineWidth = lineWidth;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(offsetX, offsetY);
-        setIsDrawing(true);
+  const handleFinish = () => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    onFinishTurn({ type: 'drawing', content: canvasRef.current.toDataURL('image/png') });
+  };
+  const finishRef = useRef(handleFinish);
+  finishRef.current = handleFinish;
+
+  useEffect(() => {
+    paintBackground();
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setTimeout(() => finishRef.current(), 0);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Posição do dedo/mouse convertida para a resolução interna do quadro
+  const toBoard = (e) => {
+    const rect = canvasRef.current.getBoundingClientRect();
+    return {
+      x: ((e.clientX - rect.left) / rect.width) * BOARD_W,
+      y: ((e.clientY - rect.top) / rect.height) * BOARD_H,
     };
+  };
 
-    const draw = ({ nativeEvent }) => {
-        if (!isDrawing) return;
-        const { offsetX, offsetY } = nativeEvent;
-        const ctx = canvasRef.current.getContext('2d');
-        ctx.lineTo(offsetX, offsetY);
-        ctx.stroke();
-    };
+  const onPointerDown = (e) => {
+    e.preventDefault();
+    canvasRef.current.setPointerCapture?.(e.pointerId);
+    const { x, y } = toBoard(e);
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.strokeStyle = tool.color;
+    ctx.fillStyle = tool.color;
+    ctx.lineWidth = tool.width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.arc(x, y, tool.width / 2, 0, Math.PI * 2); // um toque já deixa um ponto
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    drawingRef.current = true;
+  };
 
-    const getTouchPos = (canvas, touchEvent) => {
-        const rect = canvas.getBoundingClientRect();
-        return {
-            x: touchEvent.touches[0].clientX - rect.left,
-            y: touchEvent.touches[0].clientY - rect.top
-        };
-    };
+  const onPointerMove = (e) => {
+    if (!drawingRef.current) return;
+    e.preventDefault();
+    const { x, y } = toBoard(e);
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
 
-    const startTouchDrawing = (e) => {
-        e.preventDefault(); // Prevent scrolling
-        const { x, y } = getTouchPos(canvasRef.current, e);
-        const ctx = canvasRef.current.getContext('2d');
-        ctx.strokeStyle = color;
-        ctx.lineWidth = lineWidth;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        setIsDrawing(true);
-    };
+  const stopDrawing = () => {
+    drawingRef.current = false;
+  };
 
-    const touchDraw = (e) => {
-        e.preventDefault();
-        if (!isDrawing) return;
-        const { x, y } = getTouchPos(canvasRef.current, e);
-        const ctx = canvasRef.current.getContext('2d');
-        ctx.lineTo(x, y);
-        ctx.stroke();
-    };
+  const urgent = timeLeft < 10;
 
-    const stopDrawing = () => {
-        const ctx = canvasRef.current.getContext('2d');
-        ctx.closePath();
-        setIsDrawing(false);
-    };
+  const toolButtons = (
+    <>
+      {TOOLS.map((t) => (
+        <button
+          key={t.id}
+          type="button"
+          onClick={() => setTool(t)}
+          aria-label={t.label}
+          aria-pressed={tool.id === t.id}
+          title={t.label}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 text-[18px] transition md:h-12 md:w-12 ${t.swatch} ${
+            tool.id === t.id ? 'scale-110 border-lime ring-2 ring-lime/40' : 'border-line'
+          }`}
+        >
+          {t.icon}
+        </button>
+      ))}
+    </>
+  );
 
-    const clearCanvas = () => {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    };
-
-    const handleFinish = () => {
-        const dataUrl = canvasRef.current.toDataURL();
-        onFinishTurn({ type: 'drawing', content: dataUrl });
-    };
-
-    return (
-        <div className="flex flex-col items-center w-full max-w-4xl mx-auto">
-            <div className="flex justify-between w-full mb-4 px-4 items-center">
-                <div className="bg-white/[0.07] px-4 py-2 rounded text-ink">
-                    <span className="text-muted text-sm">Palavra Secreta:</span>
-                    <br />
-                    <span className="text-2xl font-bold text-violet-bright uppercase tracking-widest">{wordToDraw}</span>
-                </div>
-                <div className={`text-4xl font-bold font-mono ${timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-ink'}`}>
-                    {timeLeft}s
-                </div>
-            </div>
-
-            <div className="relative border-8 border-yellow-900 rounded-lg bg-[#1a1a1a]">
-                {/* Chalkboard Texture Effect */}
-                <canvas
-                    ref={canvasRef}
-                    width={800}
-                    height={600}
-                    className="cursor-crosshair bg-[#2F4F4F] touch-none" // touch-none prevents browser scrolling
-                    style={{ touchAction: 'none' }}
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                    onTouchStart={startTouchDrawing}
-                    onTouchMove={touchDraw}
-                    onTouchEnd={stopDrawing}
-                />
-            </div>
-
-            <div className="flex gap-4 mt-6">
-                <button
-                    onClick={() => { setColor('#ffffff'); setLineWidth(3); }}
-                    className={`w-12 h-12 rounded-full bg-white border-2 ${color === '#ffffff' ? 'border-lime scale-110' : 'border-line'}`}
-                    title="Giz Branco"
-                />
-                <button
-                    onClick={() => { setColor('#FFD700'); setLineWidth(3); }}
-                    className={`w-12 h-12 rounded-full bg-yellow-400 border-2 ${color === '#FFD700' ? 'border-lime scale-110' : 'border-line'}`}
-                    title="Giz Amarelo"
-                />
-                <button
-                    onClick={() => { setColor('#FF6347'); setLineWidth(3); }}
-                    className={`w-12 h-12 rounded-full bg-red-500 border-2 ${color === '#FF6347' ? 'border-lime scale-110' : 'border-line'}`}
-                    title="Giz Vermelho"
-                />
-                <button
-                    onClick={() => { setColor('#2F4F4F'); setLineWidth(20); }} // Eraser is just drawing background color
-                    className={`w-12 h-12 rounded-full bg-gray-600 border-2 flex items-center justify-center ${color === '#2F4F4F' ? 'border-lime scale-110' : 'border-line'}`}
-                    title="Apagador"
-                >
-                    🧽
-                </button>
-
-                <div className="w-8"></div>
-
-                <button
-                    onClick={clearCanvas}
-                    className="btn-ghost px-4"
-                >
-                    Limpar Tudo
-                </button>
-
-                <button
-                    onClick={handleFinish}
-                    className="btn-lime ml-auto px-6"
-                >
-                    ENVIAR
-                </button>
-            </div>
+  return (
+    <div className="flex w-full max-w-5xl flex-col gap-3 md:gap-4">
+      {/* Palavra e tempo */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 rounded-xs bg-white/[0.07] px-4 py-2">
+          <span className="text-caption uppercase text-muted">Desenhe</span>
+          <p className="truncate text-[20px] font-black uppercase tracking-wider text-violet-bright md:text-[26px]">{wordToDraw}</p>
         </div>
-    );
+        <div
+          className={`shrink-0 rounded-xs px-4 py-2 font-mono text-[28px] font-black md:text-[36px] ${
+            urgent ? 'animate-pulse bg-red-500/20 text-red-400' : 'bg-white/[0.07] text-ink'
+          }`}
+          aria-live="polite"
+        >
+          {timeLeft}s
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
+        {/* Quadro: cabe na largura e, no celular, também na altura da tela */}
+        <div className="mx-auto w-full min-w-0 md:flex-1">
+          <div className="mx-auto w-full max-w-[calc((100dvh-260px)*4/3)] rounded-lg border-[6px] border-yellow-900 bg-[#1a1a1a] shadow-lift md:max-w-[calc((100dvh-230px)*4/3)] md:border-8">
+            <canvas
+              ref={canvasRef}
+              width={BOARD_W}
+              height={BOARD_H}
+              className="block h-auto w-full cursor-crosshair select-none"
+              style={{ aspectRatio: `${BOARD_W} / ${BOARD_H}`, touchAction: 'none' }}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={stopDrawing}
+              onPointerCancel={stopDrawing}
+              onPointerLeave={stopDrawing}
+              aria-label={`Lousa para desenhar: ${wordToDraw}`}
+            />
+          </div>
+        </div>
+
+        {/* Ferramentas: fileira embaixo no celular, coluna ao lado no tablet/computador */}
+        <div className="flex flex-col gap-3 md:w-40 md:shrink-0">
+          <div className="flex items-center justify-center gap-2 md:flex-wrap md:justify-start md:rounded-xs md:bg-white/[0.07] md:p-3">
+            {toolButtons}
+          </div>
+          <div className="flex gap-2 md:flex-col">
+            <button type="button" onClick={paintBackground} className="btn-ghost flex-1 px-4 md:flex-none">
+              Limpar tudo
+            </button>
+            <button type="button" onClick={handleFinish} className="btn-lime h-12 flex-[2] px-6 text-[16px] md:flex-none">
+              Enviar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default CanvasBoard;
