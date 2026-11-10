@@ -245,6 +245,7 @@ const Icon = ({ path, className = 'h-6 w-6' }) => (
 );
 
 const icons = {
+  menu: <path d="M4 6h16M4 12h16M4 18h16" />,
   home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />,
   games: (
     <>
@@ -292,7 +293,8 @@ const icons = {
 };
 
 // ---------------------------------------------------------------------------
-// Navegação lateral fixa (68px, sempre visível — sem menu hambúrguer)
+// Navegação lateral (68px). No computador fica sempre visível; no celular fica escondida
+// à esquerda e abre deslizando ao tocar no logo do VAH Games na barra de cima.
 // ---------------------------------------------------------------------------
 
 const NAV_ITEMS = [
@@ -304,10 +306,16 @@ const NAV_ITEMS = [
   { href: '#comunidade', label: 'Turma', icon: icons.users },
 ];
 
-const Sidebar = () => (
+const Sidebar = ({ open, onClose }) => (
+  <>
+    {open && <div className="fixed inset-0 z-top bg-black/60 md:hidden" onClick={onClose} aria-hidden="true" />}
   <nav
+    id="menu-principal"
     aria-label="Navegação principal"
-    className="fixed inset-y-0 left-0 z-sticky flex w-sidebar flex-col items-center gap-1 bg-canvas py-3"
+    className={`fixed inset-y-0 left-0 flex w-sidebar flex-col items-center gap-1 bg-canvas py-3 transition-transform duration-200 md:z-sticky md:translate-x-0 ${
+      open ? 'z-top translate-x-0 shadow-lift' : 'z-top -translate-x-full'
+    }`}
+    onClick={(e) => e.target.closest('a') && onClose()}
   >
     <a href="#inicio" className="mb-3 flex h-12 w-12 items-center justify-center rounded-xs bg-white/[0.07] transition hover:scale-110" aria-label="VAH Games — início">
       <span className="font-display text-[13px] font-black leading-none text-lime">VAH</span>
@@ -325,17 +333,30 @@ const Sidebar = () => (
       </a>
     ))}
   </nav>
+  </>
 );
 
 // ---------------------------------------------------------------------------
 // Barra superior: logo, busca e CTA lima
 // ---------------------------------------------------------------------------
 
-const TopBar = ({ query, onQueryChange, onRandom }) => (
+const TopBar = ({ query, onQueryChange, onRandom, menuOpen, onMenu }) => (
   <header className="sticky top-0 z-popover bg-canvas/95 backdrop-blur">
     <div className="flex flex-wrap items-center gap-3 px-4 py-3 md:flex-nowrap md:px-8">
-      <a href="#inicio" className="shrink-0">
-        <img src="/images/site/logo.png" alt="VAH Games" className="h-9 w-auto md:h-10" />
+      {/* No celular o logo abre o menu lateral; no computador leva ao início */}
+      <button
+        type="button"
+        onClick={onMenu}
+        className="flex shrink-0 items-center gap-2 md:hidden"
+        aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+        aria-expanded={menuOpen}
+        aria-controls="menu-principal"
+      >
+        <Icon path={icons.menu} className="h-5 w-5 text-muted" />
+        <img src="/images/site/logo.png" alt="" className="h-9 w-auto" />
+      </button>
+      <a href="#inicio" className="hidden shrink-0 md:block">
+        <img src="/images/site/logo.png" alt="VAH Games" className="h-10 w-auto" />
       </a>
       <label className="relative order-last w-full md:order-none md:mx-auto md:max-w-md">
         <span className="sr-only">Buscar jogos</span>
@@ -615,7 +636,7 @@ const GeneralRanking = () => {
   const unit = game === 'arthur' ? 'fases' : 'pts';
 
   return (
-    <div id="ranking" className="panel flex scroll-mt-24 flex-col">
+    <div id="ranking" className="panel flex min-w-0 scroll-mt-24 flex-col">
       <h2 className="subheading">Ranking geral</h2>
       <p className="mb-3 text-body-md text-muted">Os melhores resultados de cada jogo.</p>
       <div className="no-scrollbar -mx-5 mb-4 flex gap-2 overflow-x-auto px-5" role="tablist" aria-label="Jogo do ranking">
@@ -667,8 +688,8 @@ const GeneralRanking = () => {
 
 const Community = () => (
   <section id="comunidade" className="scroll-mt-24 px-4 md:px-8">
-    <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-      <div className="flex flex-col items-start justify-center gap-4 rounded-xs bg-grad-teal p-5 md:p-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <div className="flex min-w-0 flex-col items-start justify-center gap-4 rounded-xs bg-grad-teal p-5 md:p-8">
         <h2 className="heading">Comunidade</h2>
         <p className="max-w-xl font-display text-[18px] font-bold leading-[1.4] text-ink md:text-body-xl">
           Junte-se à turma VAH! Troque dicas, desafie os amigos e mostre quem manda no ranking.
@@ -738,6 +759,7 @@ const normalize = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(
 export default function Home() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
@@ -765,9 +787,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-canvas">
-      <Sidebar />
-      <div className="pl-sidebar">
-        <TopBar query={query} onQueryChange={setQuery} onRandom={playRandom} />
+      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <div className="min-w-0 md:pl-sidebar">
+        <TopBar query={query} onQueryChange={setQuery} onRandom={playRandom} menuOpen={menuOpen} onMenu={() => setMenuOpen((o) => !o)} />
         <main className="flex flex-col gap-8 pb-4 pt-2">
           {!isFiltering && <Hero game={GAMES[0]} />}
 
