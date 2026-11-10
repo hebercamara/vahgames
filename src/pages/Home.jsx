@@ -68,7 +68,7 @@ const GAMES = [
   {
     id: 'xadrez',
     title: 'Xadrez',
-    image: '/images/site/capa-xadrez.svg',
+    image: '/images/site/capa-xadrez.webp',
     rating: 5,
     gameLink: '/xadrez',
     category: 'tabuleiro',
