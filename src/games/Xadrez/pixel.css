@@ -1,0 +1,87 @@
+/* Visual em pixel art do Xadrez (foge de propósito do tema do portal) */
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('/fonts/PressStart2P.ttf') format('truetype');
+  font-display: swap;
+}
+
+.px-font {
+  font-family: 'Press Start 2P', monospace;
+  letter-spacing: 0;
+}
+
+/* Moldura em degraus, sem cantos arredondados */
+.px-panel {
+  position: relative;
+  margin: 4px;
+  padding: 16px;
+  background: #1B1430;
+  color: #E9E3FF;
+  box-shadow:
+    0 -4px 0 0 #4A3A7A,
+    0 4px 0 0 #4A3A7A,
+    -4px 0 0 0 #4A3A7A,
+    4px 0 0 0 #4A3A7A,
+    inset 0 -4px 0 0 #120C24;
+}
+.px-panel-gold {
+  background: #2A1E10;
+  box-shadow:
+    0 -4px 0 0 #C9A04A,
+    0 4px 0 0 #C9A04A,
+    -4px 0 0 0 #C9A04A,
+    4px 0 0 0 #C9A04A,
+    inset 0 -4px 0 0 #1E120B;
+}
+.px-scene {
+  box-shadow:
+    0 -4px 0 0 #4A3A7A,
+    0 4px 0 0 #4A3A7A,
+    -4px 0 0 0 #4A3A7A,
+    4px 0 0 0 #4A3A7A;
+  margin: 4px;
+  width: calc(100% - 8px) !important;
+}
+
+.px-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  padding: 10px 12px;
+  color: #E9E3FF;
+  background: #3A2C63;
+  box-shadow: inset 0 -4px 0 0 #241A42, 0 0 0 3px #120C24;
+  transition: transform 80ms;
+}
+.px-btn:hover:not(:disabled) {
+  background: #4A3A7A;
+}
+.px-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: inset 0 -2px 0 0 #241A42, 0 0 0 3px #120C24;
+}
+.px-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.px-btn[aria-checked='true'],
+.px-btn-lime {
+  color: #0F1A00;
+  background: #C7FF5B;
+  box-shadow: inset 0 -4px 0 0 #7FB32A, 0 0 0 3px #120C24;
+}
+.px-btn-lime:hover:not(:disabled),
+.px-btn[aria-checked='true']:hover {
+  background: #D6FF85;
+}
+
+.px-selected {
+  filter: drop-shadow(0 0 0 #C7FF5B) drop-shadow(2px 0 0 #C7FF5B) drop-shadow(-2px 0 0 #C7FF5B) drop-shadow(0 2px 0 #C7FF5B) drop-shadow(0 -2px 0 #C7FF5B);
+}
+
+@keyframes px-blink {
+  50% { opacity: 0.25; }
+}
+.px-blink {
+  animation: px-blink 1s steps(1) infinite;
+}
