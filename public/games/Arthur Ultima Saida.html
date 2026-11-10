@@ -2,371 +2,143 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Jornada do Labirinto: 20 Fases</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Arthur: Última Saída · VAH Games</title>
+    <meta name="theme-color" content="#0C0D14">
+    <link rel="icon" type="image/png" href="/images/site/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Unbounded:wght@900&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            /* overflow: hidden; REMOVIDO: Permite rolagem da página se o conteúdo for maior que a tela */
-            background-color: #1a1a2e; /* Fundo escuro */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start; /* Alinha o conteúdo ao topo, permitindo rolagem para baixo */
-            min-height: 100vh;
-            font-family: 'Press Start 2P', cursive; /* Fonte estilo pixel art */
-            color: #e0e0e0;
-            -webkit-user-select: none; /* Desabilita seleção de texto */
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            position: relative; /* Para os modais */
-            padding-bottom: 20px; /* Adiciona um pouco de espaço na parte inferior para rolagem */
-        }
+        /* Visual do VAH Games (DESIGN.md): canvas escuro, painéis translúcidos, botões em pílula, lima e violeta */
+        :root { --canvas:#0C0D14; --panel:#1B1C24; --line:#292A30; --ink:#fff; --body:#E5E6EE; --muted:#BDBFCE;
+                --lime:#C7FF5B; --lime-ink:#0F1A00; --violet:#A48EFF; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; height: 100%; }
+        body { font-family: Outfit, -apple-system, "Segoe UI", sans-serif; color: var(--body); overflow: hidden;
+               background: var(--canvas) linear-gradient(285deg, #171D2E 20%, #3D2F73 100%) fixed;
+               -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+        button { font: inherit; }
 
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        /* Tela inteira sem rolar: topo, placar, labirinto (ocupa o que sobra) e controles */
+        .app { height: 100dvh; max-width: 760px; margin: 0 auto; padding: 12px 16px 68px; display: flex; flex-direction: column; gap: 10px; }
+        .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .top h1 { margin: 0; font-family: Unbounded, Outfit, sans-serif; font-size: clamp(15px, 4.4vw, 22px); font-weight: 900;
+                  text-transform: uppercase; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px;
+                border: 0; border-radius: 999px; font-size: 15px; font-weight: 800; cursor: pointer; text-decoration: none;
+                transition: transform .12s, filter .12s, background .12s; white-space: nowrap; }
+        .pill:active { transform: translateY(1px); }
+        .pill-ghost { background: rgba(255,255,255,.1); color: var(--ink); }
+        .pill-ghost:hover { background: rgba(255,255,255,.2); }
+        .pill-lime { background: var(--lime); color: var(--lime-ink); }
+        .pill-lime:hover:not(:disabled) { filter: brightness(1.05); }
+        .pill:disabled { opacity: .35; cursor: not-allowed; }
+        @media (max-width: 420px) { .hide-sm { display: none; } }
 
-        canvas {
-            background-color: #2a2a4a; /* Cor de fundo do labirinto */
-            border: 4px solid #4a4a7a;
-            border-radius: 10px;
-            display: block;
-            touch-action: none; /* Desabilita o comportamento padrão de toque */
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            margin-bottom: 20px;
-        }
+        .game-info { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .game-info > div { padding: 8px 12px; border-radius: 16px; background: rgba(255,255,255,.07); font-size: 16px;
+                           font-weight: 900; color: var(--ink); white-space: nowrap; }
+        .game-info > div::before { content: attr(data-label); display: block; font-size: 11px; font-weight: 700;
+                                   letter-spacing: .4px; text-transform: uppercase; color: var(--muted); }
 
-        .game-info {
-            display: flex;
-            justify-content: space-around;
-            width: 100%;
-            max-width: 600px;
-            margin-bottom: 15px;
-            font-size: 1.2em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-        }
+        .stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+        canvas { display: block; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.6); touch-action: none;
+                 outline: 2px solid rgba(255,255,255,.08); }
 
-        .game-info div {
-            padding: 8px 15px;
-            background-color: #3a3a6a;
-            border-radius: 8px;
-            border: 2px solid #5a5a8a;
-        }
+        .controls { display: flex; align-items: center; gap: 12px; }
+        .joystick-container { position: relative; flex: 0 0 auto; width: 120px; height: 120px; border-radius: 50%;
+                              background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.12);
+                              display: flex; align-items: center; justify-content: center; touch-action: none; }
+        .joystick-handle { width: 52px; height: 52px; border-radius: 50%; background: var(--violet); position: absolute; cursor: grab;
+                           box-shadow: 0 6px 16px rgba(0,0,0,.5), inset 0 -4px 0 rgba(0,0,0,.2); }
+        .joystick-handle:active { cursor: grabbing; background: #B8A6FF; }
+        .keys-hint { display: none; margin: 0; font-size: 13px; color: var(--muted); }
+        /* computador: setas/WASD no lugar do joystick */
+        @media (hover: hover) and (pointer: fine) { .joystick-container { display: none; } .keys-hint { display: block; } }
 
-        /* Estilos do Joystick */
-        .joystick-container {
-            position: relative;
-            width: 150px; /* Tamanho base da área do joystick */
-            height: 150px;
-            background-color: rgba(58, 58, 106, 0.7); /* Fundo semi-transparente */
-            border-radius: 50%;
-            border: 3px solid #5a5a8a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-        }
+        .inventory-container { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 16px; background: rgba(255,255,255,.07); }
+        .inventory-container h3 { margin: 0 0 8px; font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); }
+        .inventory-items { display: flex; flex-wrap: wrap; gap: 6px; max-height: 92px; overflow-y: auto; }
+        .inventory-empty { font-size: 13px; color: var(--muted); }
+        .use-item-button { height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--lime); color: var(--lime-ink);
+                           font-size: 13px; font-weight: 800; cursor: pointer; }
+        .use-item-button:disabled { opacity: .35; cursor: not-allowed; }
 
-        .joystick-handle {
-            width: 60px; /* Tamanho do círculo arrastável */
-            height: 60px;
-            background-color: #6a0572; /* Roxo vibrante */
-            border-radius: 50%;
-            border: 3px solid #9d00b0;
-            position: absolute;
-            cursor: grab;
-            transition: background-color 0.1s ease; /* Transição suave ao passar o mouse */
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
+        /* Janelas: sempre cabem na tela e rolam por dentro */
+        .message-modal, .shop-modal { display: none; position: fixed; inset: 0; z-index: 1000; align-items: center; justify-content: center;
+                                      padding: 16px; background: rgba(12,13,20,.72); backdrop-filter: blur(4px); }
+        .modal-content { width: min(100%, 460px); max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain;
+                         background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 22px 18px;
+                         box-shadow: 0 10px 30px rgba(0,0,0,.7); text-align: center; }
+        .modal-content h2 { margin: 0 0 8px; font-family: Unbounded, Outfit, sans-serif; font-weight: 900; font-size: clamp(18px, 5vw, 22px);
+                            text-transform: uppercase; color: var(--ink); line-height: 1.25; }
+        .modal-content p { margin: 0 0 4px; font-size: 16px; line-height: 1.45; color: var(--body); }
+        .modal-button { margin-top: 16px; }
+        .shop-modal .modal-content { width: min(100%, 520px); text-align: left; }
+        .shop-modal h2, .shop-modal .shop-trophies { text-align: center; }
+        .shop-trophies { color: var(--muted); font-weight: 700; }
+        .shop-trophies b { color: var(--lime); }
+        .shop-items { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+        .shop-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px;
+                     border-radius: 16px; background: rgba(255,255,255,.07); }
+        .shop-item-info { min-width: 0; }
+        .shop-item-info strong { display: block; color: var(--ink); font-size: 15px; font-weight: 800; }
+        .shop-item-info span { display: block; font-size: 13px; color: var(--muted); line-height: 1.35; }
+        .shop-item-info span:last-child { color: var(--lime); font-weight: 700; }
+        .buy-button { flex: 0 0 auto; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--lime);
+                      color: var(--lime-ink); font-size: 14px; font-weight: 800; cursor: pointer; }
+        .buy-button:disabled { background: rgba(255,255,255,.1); color: rgba(255,255,255,.4); cursor: not-allowed; }
+        .shop-close-button { display: flex; margin: 16px auto 0; }
 
-        .joystick-handle:active {
-            cursor: grabbing;
-            background-color: #9d00b0;
-        }
-
-        /* Botão da Loja */
-        .shop-button {
-            background-color: #ff9800; /* Laranja */
-            color: white;
-            border: 3px solid #e65100;
-            border-radius: 10px;
-            padding: 10px 20px;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
-            box-shadow: 0 6px 0 #bf360c;
-            margin-top: 10px;
-        }
-
-        .shop-button:active {
-            background-color: #e65100;
-            transform: translateY(3px);
-            box-shadow: 0 3px 0 #bf360c;
-        }
-
-        /* Inventário */
-        .inventory-container {
-            background-color: #3a3a6a;
-            border-radius: 10px;
-            border: 2px solid #5a5a8a;
-            padding: 10px;
-            margin-top: 15px;
-            width: 90%;
-            max-width: 600px;
-            text-align: center;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .inventory-container h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            color: #ffcc00;
-            font-size: 1.1em;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-        }
-
-        .inventory-items {
-            display: flex;
-            flex-wrap: wrap; /* Permite que os itens quebrem para a próxima linha */
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .use-item-button {
-            background-color: #007bff;
-            color: white;
-            border: 2px solid #0056b3;
-            border-radius: 8px;
-            padding: 8px 12px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            box-shadow: 0 3px 0 #004085;
-            font-size: 0.9em;
-            flex-grow: 1; /* Permite que os botões cresçam para preencher o espaço */
-            min-width: 120px; /* Garante um tamanho mínimo */
-        }
-
-        .use-item-button:active {
-            background-color: #0056b3;
-            transform: translateY(1px);
-            box-shadow: 0 1px 0 #004085;
-        }
-        .use-item-button:disabled {
-            background-color: #6c757d;
-            border-color: #5a6268;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-        }
-
-
-        /* Modais */
-        .message-modal, .shop-modal {
-            display: none; /* Escondido por padrão */
-            position: fixed; /* Usar fixed para garantir que fiquem na tela */
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background-color: #3a3a6a;
-            padding: 30px;
-            border-radius: 15px;
-            border: 4px solid #5a5a8a;
-            text-align: center;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
-            max-width: 80%;
-            max-height: 90vh; /* Adicionado para permitir rolagem */
-            overflow-y: auto; /* Adicionado para permitir rolagem */
-            font-size: 1.5em;
-            line-height: 1.5;
-            position: relative;
-        }
-
-        .modal-content h2 {
-            color: #ffcc00; /* Amarelo vibrante */
-            margin-top: 0;
-            font-size: 1.8em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-        }
-
-        .modal-content p {
-            margin-bottom: 20px;
-            color: #e0e0e0;
-        }
-
-        .modal-button {
-            background-color: #28a745; /* Verde para ação */
-            color: white;
-            border: 3px solid #1e7e34;
-            border-radius: 10px;
-            padding: 12px 25px;
-            font-size: 1.2em;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.1s ease;
-            box-shadow: 0 6px 0 #1c6b2f;
-            margin-top: 20px; /* Adicionado margem para separar do texto */
-        }
-
-        .modal-button:active {
-            background-color: #1e7e34;
-            transform: translateY(3px);
-            box-shadow: 0 3px 0 #1c6b2f;
-        }
-
-        /* Estilos específicos da loja */
-        .shop-modal .modal-content {
-            padding: 20px;
-        }
-        .shop-modal h2 {
-            margin-bottom: 15px;
-        }
-        .shop-items {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .shop-item {
-            background-color: #4a4a7a;
-            border: 2px solid #6a6a9a;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: left;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 1em;
-        }
-        .shop-item-info strong {
-            color: #ffcc00;
-        }
-        .shop-item-info span {
-            display: block;
-            font-size: 0.8em;
-            color: #ccc;
-        }
-        .buy-button {
-            background-color: #007bff;
-            color: white;
-            border: 2px solid #0056b3;
-            border-radius: 8px;
-            padding: 8px 15px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            box-shadow: 0 4px 0 #004085;
-            font-size: 0.9em;
-        }
-        .buy-button:active {
-            background-color: #0056b3;
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #004085;
-        }
-        .buy-button:disabled {
-            background-color: #6c757d;
-            border-color: #5a6268;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-        }
-        .shop-close-button {
-            background-color: #dc3545;
-            border-color: #b02a37;
-            margin-top: 25px;
-            font-size: 1.1em;
-        }
-        .shop-close-button:active {
-            background-color: #b02a37;
-        }
-
-        /* Responsividade para telas menores */
-        @media (max-width: 600px) {
-            .game-info {
-                font-size: 1em;
-                flex-direction: column;
-                gap: 10px;
-            }
-            .joystick-container {
-                width: 120px;
-                height: 120px;
-            }
-            .joystick-handle {
-                width: 50px;
-                height: 50px;
-            }
-            .modal-content {
-                padding: 20px;
-                font-size: 1.2em;
-            }
-            .modal-content h2 {
-                font-size: 1.5em;
-            }
-            .modal-button {
-                padding: 10px 20px;
-                font-size: 1em;
-            }
-            .shop-button {
-                font-size: 1em;
-                padding: 8px 15px;
-            }
-            .inventory-container {
-                padding: 8px;
-            }
-            .inventory-container h3 {
-                font-size: 1em;
-            }
-            .use-item-button {
-                font-size: 0.8em;
-                padding: 6px 10px;
-                min-width: 100px;
-            }
-        }
+        /* Avisos rápidos (não travam o jogo) */
+        .toast { position: fixed; left: 50%; top: 12px; z-index: 900; transform: translate(-50%, -140%); width: max-content; max-width: calc(100% - 32px);
+                 padding: 10px 16px; border-radius: 16px; background: rgba(27,28,36,.95); border: 1px solid var(--line);
+                 box-shadow: 0 10px 30px rgba(0,0,0,.6); text-align: center; pointer-events: none; transition: transform .25s ease; }
+        .toast.show { transform: translate(-50%, 0); }
+        .toast b { display: block; color: var(--lime); font-size: 14px; font-weight: 800; }
+        .toast span { font-size: 13px; color: var(--body); }
     </style>
 </head>
 <body>
-    <div class="game-info">
-        <div id="stage-display">Fase: 1</div>
-        <div id="trophies-display">Troféus: 0</div>
-        <div id="timer-display">Tempo: 00:00</div>
-    </div>
-    <canvas id="gameCanvas"></canvas>
-    <!-- Novo Joystick Virtual -->
-    <div class="joystick-container" id="joystickContainer">
-        <div class="joystick-handle" id="joystickHandle"></div>
-    </div>
-    <button id="shopButton" class="shop-button">Loja</button>
-
-    <!-- Inventário -->
-    <div class="inventory-container">
-        <h3>Inventário</h3>
-        <div id="inventory-items" class="inventory-items">
-            <!-- Itens do inventário serão injetados aqui via JS -->
+    <div class="app">
+        <div class="top">
+            <a class="pill pill-ghost" href="/" aria-label="Voltar ao VAH Games">← <span class="hide-sm">VAH Games</span></a>
+            <h1>Arthur<span class="hide-sm">: Última Saída</span></h1>
+            <button id="shopButton" class="pill pill-lime" type="button">Loja</button>
+        </div>
+        <div class="game-info">
+            <div id="stage-display" data-label="Fase">1</div>
+            <div id="trophies-display" data-label="Troféus">0</div>
+            <div id="timer-display" data-label="Tempo">00:00</div>
+        </div>
+        <div class="stage" id="stage"><canvas id="gameCanvas"></canvas></div>
+        <div class="controls">
+            <div class="joystick-container" id="joystickContainer">
+                <div class="joystick-handle" id="joystickHandle"></div>
+            </div>
+            <div class="inventory-container">
+                <h3>Itens</h3>
+                <p class="keys-hint">Mova com as setas ou W, A, S, D. Chegue à saída vermelha!</p>
+                <div id="inventory-items" class="inventory-items"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Modal de Mensagem -->
+    <div id="toast" class="toast" role="status" aria-live="polite"><b id="toastTitle"></b><span id="toastText"></span></div>
+
+    <!-- Mensagens com botão (fase concluída, fim de jogo) -->
     <div id="messageModal" class="message-modal">
         <div class="modal-content">
             <h2 id="modalTitle"></h2>
             <p id="modalMessage"></p>
-            <button id="modalButton" class="modal-button" style="display: none;"></button>
+            <button id="modalButton" class="pill pill-lime modal-button" type="button" style="display: none;"></button>
         </div>
     </div>
 
-    <!-- Modal da Loja -->
+    <!-- Loja -->
     <div id="shopModal" class="shop-modal">
         <div class="modal-content">
-            <h2>Loja de Itens</h2>
-            <p>Troféus: <span id="shopTrophiesDisplay">0</span></p>
+            <h2>Loja de itens</h2>
+            <p class="shop-trophies">Você tem <b id="shopTrophiesDisplay">0</b> troféus. O jogo fica pausado enquanto a loja está aberta.</p>
             <div class="shop-items">
                 <div class="shop-item">
                     <div class="shop-item-info">
@@ -433,7 +205,7 @@
                     <button class="buy-button" data-item="return_mine_item">Comprar</button>
                 </div>
             </div>
-            <button id="shopCloseButton" class="modal-button shop-close-button">Fechar Loja</button>
+            <button id="shopCloseButton" class="pill pill-ghost shop-close-button" type="button">Voltar ao jogo</button>
         </div>
     </div>
 
@@ -463,12 +235,12 @@
         const joystickHandle = document.getElementById('joystickHandle');
 
         // --- Variáveis do Jogo ---
-        const WALL_THICKNESS = 2;
+        const WALL_THICKNESS = 3;
         const PLAYER_SIZE_RATIO = 0.8;
-        const START_COLOR = '#4CAF50';
-        const END_COLOR = '#F44336';
-        const PATH_COLOR = '#2a2a4a';
-        const WALL_COLOR = '#4a4a7a';
+        const START_COLOR = '#C7FF5B';
+        const END_COLOR = '#FF5470';
+        const PATH_COLOR = '#1A1B2B';
+        const WALL_COLOR = '#8F82E8';
         const PLAYER_COLOR = '#00BCD4'; // Fallback para o jogador
         const MONSTER_COLOR = '#FF00FF'; // Fallback para monstros
         const MONSTER_SIZE_RATIO = 0.7;
@@ -668,10 +440,10 @@
 
         // --- Funções de Desenho ---
         function drawMaze() {
-            ctx.fillStyle = PATH_COLOR;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
             const { mazeCols, mazeRows } = stages[currentStage];
+            ctx.fillStyle = PATH_COLOR;
+            ctx.fillRect(0, 0, mazeCols * CELL_SIZE, mazeRows * CELL_SIZE);
+            ctx.lineCap = 'round';
 
             for (let r = 0; r < mazeRows; r++) {
                 for (let c = 0; c < mazeCols; c++) {
@@ -1030,7 +802,6 @@
                             "Você usou o poder da fruta!",
                             null, null, false
                         );
-                        setTimeout(hideMessageModal, 1500);
                     } else {
                         timeRemaining -= stageConfig.timePenaltyOnHit;
                         playerX = 0;
@@ -1041,7 +812,6 @@
                             `Você foi pego por um monstro! Voltou ao início e perdeu ${stageConfig.timePenaltyOnHit} segundos!`,
                             null, null, false
                         );
-                        setTimeout(hideMessageModal, 3000);
                     }
                     draw();
                     return;
@@ -1060,7 +830,6 @@
                         "Você está invencível por 30 segundos!",
                         null, null, false
                     );
-                    setTimeout(hideMessageModal, 3000);
                     draw();
                     return;
                 }
@@ -1083,7 +852,6 @@
                         `Você pisou em uma armadilha! Voltou ao início e perdeu ${stageConfig.trapPenaltyOnHit} segundos!`,
                         null, null, false
                     );
-                    setTimeout(hideMessageModal, 3000);
                     draw();
                     return;
                 }
@@ -1101,12 +869,10 @@
                         if (item.type === 'ice_trap_item') {
                             isMonstersFrozen = true;
                             showMessageModal("Monstro Congelado!", "Um monstro pisou na Armadilha de Gelo!", null, null, false);
-                            setTimeout(hideMessageModal, 2000);
-                            if (monsterFreezeTimerId) clearTimeout(monsterFreezeTimerId);
+                                        if (monsterFreezeTimerId) clearTimeout(monsterFreezeTimerId);
                             monsterFreezeTimerId = setTimeout(() => {
                                 isMonstersFrozen = false;
                                 showMessageModal("Monstros Descongelados!", "Os monstros voltaram a se mover!", null, null, false);
-                                setTimeout(hideMessageModal, 3000);
                             }, 5000);
                         } else if (item.type === 'return_mine_item') {
                             const { mazeCols, mazeRows } = stages[currentStage];
@@ -1126,8 +892,7 @@
                             monster.x = newMonsterX;
                             monster.y = newMonsterY;
                             showMessageModal("Monstro Teletransportado!", "Um monstro pisou na Mina de Retorno!", null, null, false);
-                            setTimeout(hideMessageModal, 2000);
-                        }
+                                    }
                         placedItems.splice(j, 1);
                         draw();
                         return;
@@ -1158,7 +923,6 @@
                     "A invencibilidade acabou. Cuidado com os monstros!",
                     null, null, false
                 );
-                setTimeout(hideMessageModal, 3000);
                 draw();
             }, invincibilityDuration);
         }
@@ -1170,7 +934,6 @@
                 "Os monstros estão paralisados por 7 segundos!",
                 null, null, false
             );
-            setTimeout(hideMessageModal, 3000);
 
             if (monsterFreezeTimerId) {
                 clearTimeout(monsterFreezeTimerId);
@@ -1182,7 +945,6 @@
                     "Os monstros voltaram a se mover!",
                     null, null, false
                 );
-                setTimeout(hideMessageModal, 3000);
             }, 7000);
             draw();
         }
@@ -1190,14 +952,12 @@
         function exterminateMonsters() {
             monsters = [];
             showMessageModal("Exterminador Ativado!", "Todos os monstros foram eliminados!", null, null, false);
-            setTimeout(hideMessageModal, 2000);
             draw();
         }
 
         function activateXRayVision() {
             isXRayActive = true;
             showMessageModal("Visão de Raio-X Ativada!", "O objetivo está destacado por 5 segundos!", null, null, false);
-            setTimeout(hideMessageModal, 2000);
 
             if (xRayTimerId) {
                 clearTimeout(xRayTimerId);
@@ -1205,7 +965,6 @@
             xRayTimerId = setTimeout(() => {
                 isXRayActive = false;
                 showMessageModal("Visão de Raio-X Esgotada!", "O objetivo não está mais destacado.", null, null, false);
-                setTimeout(hideMessageModal, 2000);
             }, 5000);
             draw();
         }
@@ -1214,7 +973,6 @@
             playerX = 0;
             playerY = 0;
             showMessageModal("Canal Ativado!", "Teletransportado para o início da fase!", null, null, false);
-            setTimeout(hideMessageModal, 2000);
             draw();
         }
 
@@ -1250,7 +1008,7 @@
             timeRemaining--;
             const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
             const seconds = (timeRemaining % 60).toString().padStart(2, '0');
-            timerDisplay.textContent = `Tempo: ${minutes}:${seconds}`;
+            timerDisplay.textContent = `${minutes}:${seconds}`;
 
             if (timeRemaining <= 0) {
                 gameOver();
@@ -1282,14 +1040,7 @@
                 return;
             }
 
-            const maxDimension = Math.max(stageConfig.mazeCols, stageConfig.mazeRows);
-            const maxCanvasWidth = window.innerWidth * 0.9;
-            const maxCanvasHeight = window.innerHeight * 0.6;
-            CELL_SIZE = Math.floor(Math.min(maxCanvasWidth / stageConfig.mazeCols, maxCanvasHeight / stageConfig.mazeRows));
-            CELL_SIZE = Math.max(CELL_SIZE, 10);
-
-            canvas.width = stageConfig.mazeCols * CELL_SIZE;
-            canvas.height = stageConfig.mazeRows * CELL_SIZE;
+            fitCanvas(stageConfig);
 
             generateMaze(stageConfig.mazeRows, stageConfig.mazeCols);
             playerX = 0;
@@ -1332,7 +1083,7 @@
             gameLoop();
 
             showMessageModal(
-                `Fase ${currentStage}: ${stageConfig.message.split(':')[0]}`,
+                `Fase ${currentStage}`,
                 stageConfig.message,
                 null, null, false
             );
@@ -1385,22 +1136,50 @@
 
         // --- Funções de Renderização ---
         function updateUI() {
-            stageDisplay.textContent = `Fase: ${currentStage}`;
-            trophiesDisplay.textContent = `Troféus: ${trophies}`;
+            stageDisplay.textContent = `${currentStage}`;
+            trophiesDisplay.textContent = `${trophies}`;
             const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
             const seconds = (timeRemaining % 60).toString().padStart(2, '0');
-            timerDisplay.textContent = `Tempo: ${minutes}:${seconds}`;
+            timerDisplay.textContent = `${minutes}:${seconds}`;
 
             updateInventoryDisplay();
         }
 
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!maze.length) return;
+            updateCamera();
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, viewW, viewH);
+            ctx.save();
+            ctx.translate(-Math.round(camX), -Math.round(camY));
             drawMaze();
             drawFruits();
             drawTraps(); // Desenha armadilhas (agora com lógica de piscar)
             drawPlayer(); // Desenha o jogador (agora com brilho por trás)
             drawMonsters();
+            ctx.restore();
+            drawGoalPointer();
+        }
+
+        // Com a Visão de Raio-X, uma seta na borda aponta para a saída quando ela está fora da tela
+        function drawGoalPointer() {
+            if (!isXRayActive) return;
+            const gx = (goalX + 0.5) * CELL_SIZE - camX;
+            const gy = (goalY + 0.5) * CELL_SIZE - camY;
+            if (gx >= 0 && gx <= viewW && gy >= 0 && gy <= viewH) return;
+            const cx = viewW / 2, cy = viewH / 2;
+            const ang = Math.atan2(gy - cy, gx - cx);
+            const m = 18;
+            const k = Math.min((viewW / 2 - m) / Math.abs(Math.cos(ang) || 1e-6), (viewH / 2 - m) / Math.abs(Math.sin(ang) || 1e-6));
+            const px = cx + Math.cos(ang) * k, py = cy + Math.sin(ang) * k;
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(ang);
+            ctx.fillStyle = END_COLOR;
+            ctx.beginPath();
+            ctx.moveTo(14, 0); ctx.lineTo(-8, -10); ctx.lineTo(-8, 10); ctx.closePath();
+            ctx.fill();
+            ctx.restore();
         }
 
         // --- Lógica do Joystick ---
@@ -1489,9 +1268,10 @@
         }
 
         // --- Event Listeners do Joystick ---
-        joystickContainer.addEventListener('touchstart', startDragJoystick);
-        joystickContainer.addEventListener('touchmove', dragJoystick);
-        joystickContainer.addEventListener('touchend', endDragJoystick);
+        joystickContainer.addEventListener('touchstart', startDragJoystick, { passive: false });
+        joystickContainer.addEventListener('touchmove', dragJoystick, { passive: false });
+        joystickContainer.addEventListener('touchend', endDragJoystick, { passive: false });
+        joystickContainer.addEventListener('touchcancel', endDragJoystick, { passive: false });
 
         joystickContainer.addEventListener('mousedown', startDragJoystick);
         document.addEventListener('mousemove', dragJoystick);
@@ -1540,49 +1320,70 @@
             }
         });
 
-        // Redimensiona o canvas ao carregar e redimensionar a janela
-        window.addEventListener('resize', () => {
-            if (gameRunning) {
-                gameRunning = false;
-                clearInterval(timerInterval);
-                clearInterval(monsterMoveIntervalId);
-                clearInterval(monsterVisibilityIntervalId);
-                clearInterval(trapVisibilityIntervalId); // Limpa o intervalo de visibilidade das armadilhas
-                clearTimeout(invincibilityTimerId);
-                clearTimeout(monsterFreezeTimerId);
-                clearTimeout(xRayTimerId);
-                cancelAnimationFrame(animationFrameId);
-                startStage(currentStage);
-            } else {
-                const stageConfig = stages[currentStage];
-                const maxDimension = Math.max(stageConfig.mazeCols, stageConfig.mazeRows);
-                const maxCanvasWidth = window.innerWidth * 0.9;
-                const maxCanvasHeight = window.innerHeight * 0.6;
-                CELL_SIZE = Math.floor(Math.min(maxCanvasWidth / stageConfig.mazeCols, maxCanvasHeight / stageConfig.mazeRows));
-                CELL_SIZE = Math.max(CELL_SIZE, 10);
+        // VAH Games: o labirinto ocupa o espaço livre da tela. Cada casa tem no mínimo MIN_CELL px;
+        // se o labirinto não couber, a câmera mostra a região em volta do Arthur e acompanha o movimento.
+        const MIN_CELL = 24;
+        const MAX_CELL = 56;
+        let viewW = 0, viewH = 0, camX = 0, camY = 0;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-                canvas.width = stageConfig.mazeCols * CELL_SIZE;
-                canvas.height = stageConfig.mazeRows * CELL_SIZE;
+        function fitCanvas(stageConfig = stages[currentStage]) {
+            const stageEl = document.getElementById('stage');
+            const W = Math.max(160, stageEl.clientWidth);
+            const H = Math.max(160, stageEl.clientHeight);
+            const { mazeCols, mazeRows } = stageConfig;
+            CELL_SIZE = Math.floor(Math.min(W / mazeCols, H / mazeRows));
+            CELL_SIZE = Math.max(MIN_CELL, Math.min(MAX_CELL, CELL_SIZE));
+            viewW = Math.min(mazeCols * CELL_SIZE, Math.floor(W));
+            viewH = Math.min(mazeRows * CELL_SIZE, Math.floor(H));
+            canvas.width = Math.round(viewW * dpr);
+            canvas.height = Math.round(viewH * dpr);
+            canvas.style.width = viewW + 'px';
+            canvas.style.height = viewH + 'px';
+        }
+
+        function updateCamera() {
+            const { mazeCols, mazeRows } = stages[currentStage];
+            const clamp = (v, max) => Math.max(0, Math.min(v, max));
+            camX = clamp((playerX + 0.5) * CELL_SIZE - viewW / 2, mazeCols * CELL_SIZE - viewW);
+            camY = clamp((playerY + 0.5) * CELL_SIZE - viewH / 2, mazeRows * CELL_SIZE - viewH);
+        }
+
+        // Mudar o tamanho da janela (ou a barra do navegador no celular) só reajusta o desenho; antes reiniciava a fase
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (!maze.length) return;
+                fitCanvas();
                 draw();
-            }
+            }, 100);
         });
 
         // --- Funções do Modal de Mensagem ---
+        let toastTimer = null;
+        function showToast(title, message, ms = 2600) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastText').textContent = message;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), ms);
+        }
+
         function showMessageModal(title, message, buttonText, buttonAction, hasButton = false) {
+            if (!hasButton) {
+                showToast(title, message, title.startsWith('Fase') ? 4000 : 2600);
+                return;
+            }
             modalTitle.textContent = title;
             modalMessage.textContent = message;
-
-            if (hasButton) {
-                modalButton.textContent = buttonText;
-                modalButton.onclick = () => {
-                    hideMessageModal();
-                    buttonAction();
-                };
-                modalButton.style.display = 'block';
-            } else {
-                modalButton.style.display = 'none';
-                setTimeout(hideMessageModal, 5000);
-            }
+            modalButton.textContent = buttonText;
+            modalButton.onclick = () => {
+                hideMessageModal();
+                buttonAction();
+            };
+            modalButton.style.display = 'inline-flex';
             messageModal.style.display = 'flex';
         }
 
@@ -1592,6 +1393,7 @@
 
         // --- Funções da Loja ---
         function openShopModal() {
+            if (!gameRunning) return; // fase concluída ou fim de jogo: a loja abre só durante a partida
             gameRunning = false;
             clearInterval(timerInterval);
             clearInterval(monsterMoveIntervalId);
@@ -1678,10 +1480,8 @@
                 trophies -= cost;
                 playerInventory[itemType]++;
                 showMessageModal("Comprado!", `${itemName} adicionado ao inventário!`, null, null, false);
-                setTimeout(hideMessageModal, 2000);
             } else {
                 showMessageModal("Troféus Insuficientes!", `Você precisa de ${cost} Troféus para comprar ${itemName}.`, null, null, false);
-                setTimeout(hideMessageModal, 2000);
             }
             updateUI();
             shopTrophiesDisplay.textContent = trophies;
@@ -1708,17 +1508,19 @@
                     const button = document.createElement('button');
                     button.className = 'use-item-button';
                     button.dataset.item = itemType;
-                    button.textContent = `Usar ${itemDisplayNames[itemType]} (${playerInventory[itemType]})`;
+                    button.textContent = `${itemDisplayNames[itemType]} ×${playerInventory[itemType]}`;
                     button.onclick = () => useItem(button.dataset.item);
                     inventoryItemsDiv.appendChild(button);
                 }
+            }
+            if (!inventoryItemsDiv.children.length) {
+                inventoryItemsDiv.innerHTML = '<span class="inventory-empty">Nenhum item. Compre na Loja com seus troféus.</span>';
             }
         }
 
         function useItem(itemType) {
             if (!gameRunning) {
                 showMessageModal("Jogo Pausado", "Você só pode usar itens durante o jogo!", null, null, false);
-                setTimeout(hideMessageModal, 2000);
                 return;
             }
 
@@ -1736,12 +1538,10 @@
                         const randomIndex = Math.floor(Math.random() * monsters.length);
                         monsters.splice(randomIndex, 1);
                         showMessageModal("Blaster Ativado!", "Um monstro foi eliminado!", null, null, false);
-                        setTimeout(hideMessageModal, 2000);
-                    } else {
+                            } else {
                         showMessageModal("Nenhum Monstro!", "Não há monstros para usar o Blaster.", null, null, false);
                         playerInventory[itemType]++; // Devolve o item se não puder ser usado
-                        setTimeout(hideMessageModal, 2000);
-                    }
+                            }
                 } else if (itemType === 'canal_item') {
                     teleportToStart();
                 } else if (itemType === 'xray_vision_item') {
@@ -1749,16 +1549,13 @@
                 } else if (itemType === 'ice_trap_item') {
                     placedItems.push({ x: playerX, y: playerY, type: 'ice_trap_item', active: true });
                     showMessageModal("Armadilha de Gelo Ativada!", "Uma armadilha de gelo foi colocada!", null, null, false);
-                    setTimeout(hideMessageModal, 2000);
-                } else if (itemType === 'return_mine_item') {
+                    } else if (itemType === 'return_mine_item') {
                     placedItems.push({ x: playerX, y: playerY, type: 'return_mine_item', active: true });
                     showMessageModal("Mina de Retorno Ativada!", "Uma mina de retorno foi colocada!", null, null, false);
-                    setTimeout(hideMessageModal, 2000);
-                }
+                    }
                 updateUI();
             } else {
                 showMessageModal("Item Não Disponível", "Você não tem este item no inventário.", null, null, false);
-                setTimeout(hideMessageModal, 2000);
             }
         }
 
