@@ -2,149 +2,97 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corrida Animal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>A Fuga do Sonic · VAH Games</title>
+    <meta name="theme-color" content="#0C0D14">
+    <link rel="icon" type="image/png" href="/images/site/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Unbounded:wght@900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #388E3C; /* Fundo verde folha mais escuro */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            overflow: hidden; /* Previne barras de rolagem */
-        }
-        .game-container {
-            background-color: #4CAF50; /* Fundo verde folha ligeiramente mais claro para o contêiner */
-            border-radius: 1rem; /* Cantos arredondados */
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            max-width: 90vw;
-            width: 400px; /* Largura fixa para a área do jogo */
-        }
-        canvas {
-            background-color: #66BB6A; /* Fundo do mundo do jogo (um verde um pouco mais claro para contraste) */
-            border-radius: 0.75rem;
-            display: block;
-            touch-action: none; /* Desabilita ações de toque padrão como rolagem */
-            width: 100%; /* Torna o canvas responsivo dentro do seu contêiner */
-            height: 500px; /* Altura fixa para a área do jogo */
-            margin-bottom: 1rem;
-        }
-        .game-info {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            padding: 0 0.5rem;
-            margin-bottom: 1rem;
-            color: #e2e8f0; /* Cor de texto clara */
-            font-size: 1.25rem;
-            font-weight: 700;
-        }
-        .game-over-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            border-radius: 1rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #e2e8f0;
-            font-size: 2rem;
-            font-weight: 700;
-            text-align: center;
-            z-index: 10;
-        }
-        .hidden {
-            display: none;
-        }
-        .restart-button {
-            background-color: #4299e1; /* Azul */
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-size: 1.25rem;
-            font-weight: 700;
-            cursor: pointer;
-            border: none;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            margin-top: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .restart-button:hover {
-            background-color: #3182ce; /* Azul mais escuro */
-            transform: translateY(-2px);
-        }
-        .restart-button:active {
-            transform: translateY(0);
-            box-shadow: none;
-        }
-        .instructions {
-            color: #cbd5e0;
-            font-size: 0.9rem;
-            margin-top: 1rem;
-            text-align: center;
-        }
-        .loading-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
-            border-radius: 1rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #e2e8f0;
-            font-size: 1.5rem;
-            font-weight: 700;
-            text-align: center;
-            z-index: 20;
-        }
+        /* Visual do VAH Games (DESIGN.md) com fundo em pixel art */
+        :root { --canvas:#0C0D14; --panel:#1B1C24; --line:#292A30; --ink:#fff; --body:#E5E6EE; --muted:#BDBFCE;
+                --lime:#C7FF5B; --lime-ink:#0F1A00; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; height: 100%; }
+        body { font-family: Outfit, -apple-system, "Segoe UI", sans-serif; color: var(--body); overflow: hidden;
+               background: var(--canvas) url('/images/fuga-do-sonic/fundo-pixel.png') center bottom / cover no-repeat fixed;
+               image-rendering: pixelated; -webkit-tap-highlight-color: transparent; }
+        button { font: inherit; }
+
+        .game-container { height: 100dvh; max-width: 520px; margin: 0 auto; padding: 12px 16px 68px;
+                          display: flex; flex-direction: column; align-items: center; gap: 10px; image-rendering: auto; }
+        .top { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .top h1 { margin: 0; font-family: Unbounded, Outfit, sans-serif; font-size: clamp(15px, 4.4vw, 21px); font-weight: 900;
+                  text-transform: uppercase; color: var(--ink); white-space: nowrap; text-shadow: 0 3px 0 rgba(0,0,0,.45); }
+        .top-spacer { width: 44px; }
+        .pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px;
+                border: 0; border-radius: 999px; font-size: 15px; font-weight: 800; cursor: pointer; text-decoration: none;
+                transition: transform .12s, filter .12s, background .12s; white-space: nowrap; }
+        .pill:active { transform: translateY(1px); }
+        .pill-ghost { background: rgba(255,255,255,.12); color: var(--ink); backdrop-filter: blur(4px); }
+        .pill-ghost:hover { background: rgba(255,255,255,.22); }
+        .pill-lime { background: var(--lime); color: var(--lime-ink); }
+        .pill-lime:hover { filter: brightness(1.05); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+        @media (max-width: 420px) { .hide-sm { display: none; } }
+
+        .game-info { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .game-info > div { padding: 8px 12px; border-radius: 16px; background: rgba(27,28,36,.78); backdrop-filter: blur(4px);
+                           font-size: 18px; font-weight: 900; color: var(--ink); }
+        .game-info > div::before { content: attr(data-label); display: block; font-size: 11px; font-weight: 700; letter-spacing: .4px;
+                                   text-transform: uppercase; color: var(--muted); }
+        #rings { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; }
+        #rings::before { flex-basis: 100%; }
+        .ring-icon { width: 20px; height: 20px; background: url('/images/fuga-do-sonic/argola.png') 0 0 / 400% 100% no-repeat;
+                     image-rendering: pixelated; animation: ringSpin .4s steps(4) infinite; }
+        @keyframes ringSpin { to { background-position: -80px 0; } }
+
+        /* Área do jogo: proporção fixa 360x500, cabendo na altura da tela (antes esticava conforme a largura) */
+        .stage { position: relative; flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+        .stage-inner { position: relative; width: min(100%, calc((100dvh - 280px) * 0.72)); }
+        canvas { display: block; width: 100%; height: auto; aspect-ratio: 360 / 500; border-radius: 16px; touch-action: none;
+                 box-shadow: 0 0 0 4px rgba(12,13,20,.85), 0 10px 30px rgba(0,0,0,.6); }
+        .hint { margin: 0; padding: 8px 14px; border-radius: 16px; background: rgba(12,13,20,.78); backdrop-filter: blur(4px);
+                font-size: 13px; line-height: 1.4; color: var(--body); text-align: center; }
+        .hint b { color: var(--lime); }
+
+        .game-over-screen, .loading-screen { position: absolute; inset: 0; border-radius: 16px; display: flex; flex-direction: column;
+                                             align-items: center; justify-content: center; gap: 8px; padding: 20px; text-align: center;
+                                             background: rgba(12,13,20,.78); backdrop-filter: blur(3px); z-index: 10; }
+        .loading-screen { z-index: 20; }
+        .game-over-screen h2 { margin: 0; font-family: Unbounded, Outfit, sans-serif; font-weight: 900; font-size: 24px;
+                               text-transform: uppercase; color: var(--ink); }
+        .game-over-screen p, .loading-screen p { margin: 0; font-size: 17px; font-weight: 700; color: var(--body); }
+        .game-over-screen p b { color: var(--lime); font-size: 22px; }
+        .restart-button { margin-top: 10px; }
         /* não depende do Tailwind (CDN) para esconder as telas de carregando/fim de jogo */
         .hidden { display: none !important; }
-        #rings { display: flex; align-items: center; gap: 6px; }
-        .ring-icon { width: 22px; height: 22px; background: url('/images/fuga-do-sonic/argola.png') 0 0 / 400% 100% no-repeat;
-                     image-rendering: pixelated; animation: ringSpin .4s steps(4) infinite; }
-        @keyframes ringSpin { to { background-position: -88px 0; } }
     </style>
 </head>
 <body>
     <div class="game-container">
+        <div class="top">
+            <a class="pill pill-ghost" href="/" aria-label="Voltar ao VAH Games">← <span class="hide-sm">VAH Games</span></a>
+            <h1>A Fuga do Sonic</h1>
+            <span class="top-spacer"></span>
+        </div>
         <div class="game-info">
-            <div id="score">Pontuação: 0</div>
-            <div id="rings"><span class="ring-icon" aria-hidden="true"></span><span id="ringCount">0</span></div>
-            <div id="high-score">Recorde: 0</div>
+            <div id="score" data-label="Pontos">0</div>
+            <div id="rings" data-label="Argolas"><span class="ring-icon" aria-hidden="true"></span><span id="ringCount">0</span></div>
+            <div id="high-score" data-label="Recorde">0</div>
         </div>
-        <canvas id="gameCanvas" width="360" height="500"></canvas>
-        <div id="gameOverScreen" class="game-over-screen hidden">
-            <p>Fim de Jogo!</p>
-            <p>Sua Pontuação: <span id="finalScore">0</span></p>
-            <button id="restartButton" class="restart-button">Jogar Novamente</button>
+        <div class="stage">
+            <div class="stage-inner">
+                <canvas id="gameCanvas" width="360" height="500"></canvas>
+                <div id="gameOverScreen" class="game-over-screen hidden">
+                    <h2>Fim de jogo!</h2>
+                    <p>Você fez <b id="finalScore">0</b> pontos</p>
+                    <button id="restartButton" class="pill pill-lime restart-button" type="button">Jogar de novo</button>
+                </div>
+                <div id="loadingScreen" class="loading-screen">
+                    <p>Carregando…</p>
+                </div>
+            </div>
         </div>
-        <div id="loadingScreen" class="loading-screen">
-            <p>Carregando recursos...</p>
-        </div>
-        <div class="instructions">
-            <p>Deslize para cima para pular.</p>
-            <p>Pegue as argolas: cada uma vale 10 pontos e a cada 10 você ganha +100!</p>
-            <p>Deslize para os lados para mudar de faixa.</p>
-            <p>Use as setas do teclado para jogar no desktop.</p>
-            <p>No desktop, clique e arraste para pular ou mudar de faixa.</p>
-        </div>
+        <p class="hint">Deslize para os lados para trocar de faixa e para cima para pular (no computador: setas).<br>Cada <b>argola</b> vale 10 pontos e a cada 10 você ganha <b>+100</b>!</p>
     </div>
 
     <script type="module">
@@ -493,12 +441,12 @@
             roadY1 = 0; // Reset road position
             roadY2 = -canvas.height; // Reset road position
             updateScoreDisplay();
-            highScoreDisplay.textContent = `Recorde: ${highScore}`;
+            highScoreDisplay.textContent = `${highScore}`;
             gameOverScreen.classList.add('hidden');
         }
 
         function updateScoreDisplay() {
-            scoreDisplay.textContent = `Pontuação: ${Math.floor(score)}`;
+            scoreDisplay.textContent = `${Math.floor(score)}`;
         }
 
         function checkCollision(player, obstacle) {
@@ -617,7 +565,7 @@
             if (score > highScore) {
                 highScore = Math.floor(score);
                 localStorage.setItem('subwaySurfersHighScore', highScore);
-                highScoreDisplay.textContent = `Recorde: ${highScore}`;
+                highScoreDisplay.textContent = `${highScore}`;
             }
         }
 
