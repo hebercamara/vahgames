@@ -143,7 +143,7 @@ const GAMES = [
   {
     id: 'duelo-de-mestres',
     title: 'Duelo de Mestres',
-    image: '/images/site/capa-duelo-de-mestres.svg',
+    image: '/images/site/capa-duelo-de-mestres.webp',
     rating: 5,
     gameLink: '/duelo-de-mestres',
     category: 'tabuleiro',

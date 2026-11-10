@@ -52,7 +52,8 @@ npm run dev
   (`src/games/Xadrez/PixelBoard.jsx`) e peças desenhadas para o VAH Games em `public/images/xadrez`.
   Fonte Press Start 2P (SIL Open Font License 1.1) em `public/fonts`.
 - Damas: implementação própria com a regra brasileira (`src/games/Damas/logic.js`).
-- Duelo de Mestres: implementação própria de um jogo de tabuleiro 5x5 com cartas de movimento (`src/games/DueloDeMestres`).
+- Duelo de Mestres: implementação própria de um jogo de tabuleiro 5x5 com cartas de movimento (`src/games/DueloDeMestres`),
+  com tabuleiro, fichas e cartas em aquarela feitos para o VAH Games (`public/images/duelo`).
 - Quebra-Tijolos: jogo próprio do VAH Games (`src/games/QuebraTijolos`).
 - 2048: [gabrielecirulli/2048](https://github.com/gabrielecirulli/2048) de Gabriele Cirulli (MIT), com tema
   visual VAH em `public/games/2048/style/vah.css`. Licença em `public/games/2048/LICENSE.txt`.
