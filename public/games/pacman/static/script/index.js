@@ -958,12 +958,19 @@
 				update:function(){
 					var coord = this.coord;
 					if(!coord.offset){
+						// VAH Games: a seta fica guardada por alguns quadros do labirinto, então apertar
+						// um pouco antes da curva faz o Pac-Man virar no próximo caminho livre.
 						if(typeof this.control.orientation != 'undefined'){
 							if(!map.get(coord.x+_COS[this.control.orientation],coord.y+_SIN[this.control.orientation])){
 								this.orientation = this.control.orientation;
+								this.control = {};
+							}else if(this.control.cell!==coord.x+','+coord.y){
+								this.control.cell = coord.x+','+coord.y;
+								if(--this.control.cells<0){
+									this.control = {};
+								}
 							}
 						}
-						this.control = {};
 						var value = map.get(coord.x+_COS[this.orientation],coord.y+_SIN[this.orientation]);
 						if(value==0){
 							this.x += this.speed*_COS[this.orientation];
@@ -973,6 +980,11 @@
 							this.y -= map.size*(map.y_length-1)*_SIN[this.orientation];
 						}
 					}else{
+						// VAH Games: dar meia-volta vale na hora, mesmo no meio do caminho
+						if(typeof this.control.orientation != 'undefined'&&this.control.orientation==(this.orientation+2)%4){
+							this.orientation = this.control.orientation;
+							this.control = {};
+						}
 						if(!beans.get(this.coord.x,this.coord.y)){	//吃豆
 							_SCORE++;
 							beans.set(this.coord.x,this.coord.y,1);
@@ -1016,16 +1028,16 @@
 					this.status = this.status==2?1:2;
 					break;
 					case 39: //右
-					player.control = {orientation:0};
+					player.control = {orientation:0,cells:1};
 					break;
 					case 40: //下
-					player.control = {orientation:1};
+					player.control = {orientation:1,cells:1};
 					break;
 					case 37: //左
-					player.control = {orientation:2};
+					player.control = {orientation:2,cells:1};
 					break;
 					case 38: //上
-					player.control = {orientation:3};
+					player.control = {orientation:3,cells:1};
 					break;
 				}
 			});
