@@ -42,11 +42,18 @@
 
         /* Pista: escala para caber na altura da tela, sempre na proporção 5:6 */
         .stage { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
-        canvas { display: block; width: min(100%, calc((100dvh - 250px) * 5 / 6)); aspect-ratio: 5 / 6; height: auto;
+        canvas { display: block;
                  border-radius: 16px; background: #2B2C33; box-shadow: 0 10px 30px rgba(0,0,0,.6); touch-action: none; }
         @media (max-width: 420px) { .hide-sm { display: none; } }
         .hint { margin: 0; font-size: 13px; color: var(--muted); text-align: center; }
-        .game-controls { display: flex; gap: 8px; }
+        /* Botões de baixo na mesma linha do botão Ranking */
+        .game-controls { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 50; display: flex; gap: 8px; }
+        @media (max-width: 480px) { .game-controls { left: 16px; transform: none; } }
+        .nitro-btn { --p: 100%; min-width: 150px; height: 48px; box-shadow: 0 10px 30px rgba(0,0,0,.5); font-size: 17px; color: #2B1300;
+                     background: linear-gradient(90deg, #FF9F1C var(--p), rgba(255,159,28,.25) var(--p)); }
+        .nitro-btn:disabled { opacity: 1; cursor: default; color: rgba(255,255,255,.75); }
+        .nitro-btn.active { color: #2B1300; animation: nitroPulse .25s infinite alternate; }
+        @keyframes nitroPulse { from { filter: brightness(1); } to { filter: brightness(1.25); } }
 
         /* Janelas (menu, loja e mensagens): sempre cabem na tela e rolam por dentro */
         .menu-screen, .message-box { position: fixed; inset: 0; z-index: 100; display: none; align-items: center;
@@ -102,9 +109,10 @@
             <span>Troféus <span id="trophyCount">0</span></span>
         </div>
         <div class="stage"><canvas id="gameCanvas"></canvas></div>
-        <p class="hint">Toque à esquerda ou à direita da pista (ou use ← →) para trocar de faixa.</p>
+        <p class="hint">Toque à esquerda ou à direita da pista (ou ← →) para trocar de faixa. Nitro: botão, Espaço ou ↑.</p>
         <div class="game-controls">
             <button id="startButton" class="pill pill-lime" type="button">Iniciar jogo</button>
+            <button id="nitroButton" class="pill nitro-btn" type="button" style="display: none;">🔥 Nitro</button>
         </div>
     </div>
 
@@ -160,6 +168,27 @@
         // Set internal resolution to match design intent
         canvas.width = 500;
         canvas.height = 600;
+
+        // A pista ocupa todo o espaço livre: a largura interna fica em 500 e a altura cresce
+        // conforme a tela (de 600 até 1000), mostrando mais estrada à frente no celular.
+        function fitCanvas() {
+            const stage = document.querySelector('.stage');
+            const W = stage.clientWidth, H = stage.clientHeight;
+            if (!W || !H) return;
+            const h = Math.round(Math.max(600, Math.min(1000, 500 * H / W)));
+            if (canvas.height !== h) {
+                canvas.height = h;
+                if (typeof playerCar !== 'undefined' && playerCar) playerCar.y = canvas.height - carHeight - 42;
+            }
+            const scale = Math.min(W / 500, H / canvas.height);
+            canvas.style.width = Math.floor(500 * scale) + 'px';
+            canvas.style.height = Math.floor(canvas.height * scale) + 'px';
+        }
+        let fitTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(fitTimer);
+            fitTimer = setTimeout(() => { fitCanvas(); if (gameState !== 'playing') drawIdleTrack(); }, 100);
+        });
         const ctx = canvas.getContext('2d');
         const scoreDisplay = document.getElementById('score');
         const highScoreDisplay = document.getElementById('highScore');
@@ -198,22 +227,40 @@
         let phaseDuration = 0;
 
         // Phase configurations
+        // Fases: velocidade (px por quadro a 60 fps), intervalo entre ondas de carros, chance de a onda
+        // trazer 2 carros e duração (a fase termina pela distância equivalente; o nitro chega antes).
+        // Nunca mais de 2 carros por onda: sempre sobram 3 faixas livres.
         const phases = [
-            { speed: 2, spawnInterval: 3500, duration: 30000, trophyReward: 5 }, // Phase 1
-            { speed: 3, spawnInterval: 3000, duration: 30000, trophyReward: 7 }, // Phase 2
-            { speed: 4, spawnInterval: 2500, duration: 30000, trophyReward: 10 }, // Phase 3
-            { speed: 5, spawnInterval: 2000, duration: 30000, trophyReward: 12 }, // Phase 4
-            { speed: 6, spawnInterval: 1500, duration: 30000, trophyReward: 15 }, // Phase 5
-            { speed: 7, spawnInterval: 1200, duration: 30000, trophyReward: 18 }, // Phase 6
-            { speed: 8, spawnInterval: 900, duration: 30000, trophyReward: 20 }, // Phase 7
-            { speed: 9, spawnInterval: 700, duration: 30000, trophyReward: 25 }, // Phase 8
-            { speed: 10, spawnInterval: 500, duration: 30000, trophyReward: 30 }, // Phase 9
-            { speed: 11, spawnInterval: 300, duration: 30000, trophyReward: 40 }, // Phase 10
+            { speed: 3.2, spawnInterval: 1400, pairChance: 0,    duration: 25000, trophyReward: 5 },  // Fase 1
+            { speed: 3.8, spawnInterval: 1200, pairChance: 0.1,  duration: 28000, trophyReward: 7 },  // Fase 2
+            { speed: 4.4, spawnInterval: 1050, pairChance: 0.25, duration: 30000, trophyReward: 10 }, // Fase 3
+            { speed: 5.0, spawnInterval: 920,  pairChance: 0.35, duration: 30000, trophyReward: 12 }, // Fase 4
+            { speed: 5.7, spawnInterval: 820,  pairChance: 0.45, duration: 32000, trophyReward: 15 }, // Fase 5
+            { speed: 6.4, spawnInterval: 730,  pairChance: 0.55, duration: 32000, trophyReward: 18 }, // Fase 6
+            { speed: 7.2, spawnInterval: 650,  pairChance: 0.65, duration: 34000, trophyReward: 20 }, // Fase 7
+            { speed: 8.0, spawnInterval: 590,  pairChance: 0.72, duration: 34000, trophyReward: 25 }, // Fase 8
+            { speed: 8.9, spawnInterval: 540,  pairChance: 0.8,  duration: 36000, trophyReward: 30 }, // Fase 9
+            { speed: 9.8, spawnInterval: 500,  pairChance: 0.88, duration: 40000, trophyReward: 40 }, // Fase 10
         ];
 
+        // Nitro: acelera por um tempo, dobra os pontos e depois precisa recarregar
+        const NITRO_MULT = 1.75;
+        const NITRO_DURATION = 2500;
+        const NITRO_COOLDOWN = 6000;
+        let nitroUntil = 0;
+        let nitroReadyAt = 0;
+        let lastFrameTime = 0;
+        let frameScale = 1;
+        let phaseDistance = 0;
+        let phaseProgress = 0;
+        let pairChance = 0;
+        const nitroOn = (t = performance.now()) => t < nitroUntil;
+        const effSpeed = () => roadSpeed * (nitroOn() ? NITRO_MULT : 1);
+
         // Car properties
-        const carWidth = 60;
-        const carHeight = 60;
+        // As imagens dos carros têm 31x56 (proporção 0,55): desenhadas em 44x80 para não ficarem achatadas
+        const carWidth = 44;
+        const carHeight = 80;
 
         // All available player cars (default and shop)
         const allPlayerCars = [
@@ -303,7 +350,9 @@
                 const h = this.height;
 
                 if (this.isImageLoaded) {
+                    c.imageSmoothingEnabled = false;
                     c.drawImage(this.carImage, x, y, w, h);
+                    c.imageSmoothingEnabled = true;
                 } else {
                     // Fallback to a simple colored square if image is not loaded
                     c.fillStyle = '#63b3ed';
@@ -312,7 +361,7 @@
             }
 
             update() {
-                this.y += roadSpeed;
+                this.y += effSpeed() * frameScale;
             }
         }
 
@@ -349,7 +398,7 @@
             }
 
             update() {
-                this.y += roadSpeed;
+                this.y += effSpeed() * frameScale;
             }
         }
 
@@ -370,7 +419,7 @@
                 ctx.fillRect(Math.random() * (roadLeft - 10), y, 5, 10);
                 ctx.fillRect(roadRight + 5 + Math.random() * (canvas.width - roadRight - 15), y, 5, 10);
             }
-            grassOffset = (grassOffset + roadSpeed) % 20;
+            grassOffset = (grassOffset + effSpeed() * frameScale) % 20;
         }
 
         function drawRoad() {
@@ -379,23 +428,26 @@
             ctx.fillRect(0, 0, 6, canvas.height);
             ctx.fillRect(canvas.width - 6, 0, 6, canvas.height);
             ctx.fillStyle = roadLineColor;
-            for (let i = 0; i <= canvas.height / (roadLineLength + roadLineGap) + 1; i++) {
-                let y = (i * (roadLineLength + roadLineGap) + roadLineOffset) % (canvas.height + roadLineGap);
-                if (y < -roadLineLength) y += canvas.height + roadLineGap;
-
-                const laneWidth = canvas.width / numLanes;
+            const period = roadLineLength + roadLineGap;
+            const laneWidth = canvas.width / numLanes;
+            for (let y = roadLineOffset - period; y < canvas.height; y += period) {
                 for (let j = 1; j < numLanes; j++) {
                     ctx.fillRect(j * laneWidth - roadLineWidth / 2, y, roadLineWidth, roadLineLength);
                 }
             }
-            roadLineOffset = (roadLineOffset + roadSpeed) % (roadLineLength + roadLineGap);
+            roadLineOffset = (roadLineOffset + effSpeed() * frameScale) % (roadLineLength + roadLineGap);
         }
 
+        // Uma onda de 1 ou 2 carros em faixas diferentes, sem empilhar em faixa que acabou de receber carro
         function spawnOpponentCar() {
-            const lane = Math.floor(Math.random() * numLanes);
-            const x = lanePositions[lane];
-            const imageUrl = opponentCarImageUrls[Math.floor(Math.random() * opponentCarImageUrls.length)];
-            opponentCars.push(new Car(x, -carHeight, imageUrl));
+            const busy = new Set(opponentCars.filter(c => c.y < carHeight * 1.2).map(c => lanePositions.indexOf(c.x)));
+            const free = [...Array(numLanes).keys()].filter(l => !busy.has(l));
+            const count = Math.random() < pairChance ? 2 : 1;
+            for (let k = 0; k < count && free.length; k++) {
+                const lane = free.splice(Math.floor(Math.random() * free.length), 1)[0];
+                const imageUrl = opponentCarImageUrls[Math.floor(Math.random() * opponentCarImageUrls.length)];
+                opponentCars.push(new Car(lanePositions[lane], -carHeight - Math.random() * 30, imageUrl));
+            }
         }
 
         function spawnBackgroundElement() {
@@ -437,11 +489,89 @@
             backgroundElements = backgroundElements.filter(el => el.y < canvas.height + el.height);
         }
 
+        // Área de batida um pouco menor que o desenho, para não "bater" no vazio
         function checkCollision(car1, car2) {
-            return car1.x < car2.x + car2.width &&
-                   car1.x + car1.width > car2.x &&
-                   car1.y < car2.y + car2.height &&
-                   car1.y + car1.height > car2.y;
+            const ix = 5, iy = 7;
+            return car1.x + ix < car2.x + car2.width - ix &&
+                   car1.x + car1.width - ix > car2.x + ix &&
+                   car1.y + iy < car2.y + car2.height - iy &&
+                   car1.y + car1.height - iy > car2.y + iy;
+        }
+
+        function drawNitroFlames(car, t) {
+            const cx = car.x + car.width / 2;
+            const base = car.y + car.height - 4;
+            const flick = 0.75 + Math.random() * 0.5;
+            [[-9, 1], [9, 1]].forEach(([dx]) => {
+                ctx.fillStyle = 'rgba(255,159,28,0.95)';
+                ctx.beginPath();
+                ctx.moveTo(cx + dx - 6, base);
+                ctx.lineTo(cx + dx + 6, base);
+                ctx.lineTo(cx + dx, base + 26 * flick);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255,240,150,0.95)';
+                ctx.beginPath();
+                ctx.moveTo(cx + dx - 3, base);
+                ctx.lineTo(cx + dx + 3, base);
+                ctx.lineTo(cx + dx, base + 13 * flick);
+                ctx.closePath();
+                ctx.fill();
+            });
+            // linhas de velocidade
+            ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 6; i++) {
+                const lx = Math.random() * canvas.width;
+                const ly = Math.random() * canvas.height;
+                ctx.beginPath();
+                ctx.moveTo(lx, ly);
+                ctx.lineTo(lx, ly + 40);
+                ctx.stroke();
+            }
+        }
+
+        function drawProgress() {
+            const pct = Math.min(1, phaseProgress / phaseDistance);
+            ctx.fillStyle = 'rgba(12,13,20,0.55)';
+            ctx.fillRect(10, 10, canvas.width - 20, 10);
+            ctx.fillStyle = nitroOn() ? '#FF9F1C' : '#C7FF5B';
+            ctx.fillRect(10, 10, (canvas.width - 20) * pct, 10);
+            ctx.fillStyle = '#fff';
+            ctx.font = '800 14px Outfit, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('🏁', canvas.width - 12, 38);
+        }
+
+        // Botão de nitro: mostra a recarga enchendo
+        function updateNitroButton(t = performance.now()) {
+            const btn = document.getElementById('nitroButton');
+            if (!btn) return;
+            if (nitroOn(t)) {
+                btn.disabled = true;
+                btn.classList.add('active');
+                btn.style.setProperty('--p', '100%');
+                btn.textContent = '🔥 Nitro!';
+            } else if (t < nitroReadyAt) {
+                btn.disabled = true;
+                btn.classList.remove('active');
+                const pct = 100 - ((nitroReadyAt - t) / NITRO_COOLDOWN) * 100;
+                btn.style.setProperty('--p', `${Math.max(0, pct)}%`);
+                btn.textContent = 'Recarregando…';
+            } else {
+                btn.disabled = gameState !== 'playing';
+                btn.classList.remove('active');
+                btn.style.setProperty('--p', '100%');
+                btn.textContent = '🔥 Nitro';
+            }
+        }
+
+        function fireNitro() {
+            const t = performance.now();
+            if (gameState !== 'playing' || nitroOn(t) || t < nitroReadyAt) return;
+            nitroUntil = t + NITRO_DURATION;
+            nitroReadyAt = nitroUntil + NITRO_COOLDOWN;
+            updateNitroButton(t);
         }
 
         function drawIdleTrack() {
@@ -456,6 +586,7 @@
         function showMenu() {
             gameState = 'menu';
             cancelAnimationFrame(animationFrameId);
+            document.getElementById('nitroButton').style.display = 'none';
             startMenu.style.display = 'flex';
             shopScreen.style.display = 'none';
             messageBox.style.display = 'none';
@@ -485,6 +616,14 @@
             roadSpeed = selectedPhase.speed;
             opponentSpawnInterval = selectedPhase.spawnInterval;
             phaseDuration = selectedPhase.duration;
+            pairChance = selectedPhase.pairChance;
+            phaseDistance = selectedPhase.speed * 60 * (selectedPhase.duration / 1000);
+            phaseProgress = 0;
+            nitroUntil = 0;
+            nitroReadyAt = 0;
+            lastFrameTime = 0;
+            frameScale = 1;
+            document.getElementById('nitroButton').style.display = 'inline-flex';
 
             score = 0;
             scoreDisplay.textContent = score;
@@ -497,7 +636,7 @@
             backgroundElements = [];
             currentLane = Math.floor(numLanes / 2);
             const selectedCar = allPlayerCars.find(car => car.id === selectedPlayerCarId);
-            playerCar = new Car(lanePositions[currentLane], canvas.height - carHeight - 10, selectedCar.imageUrl);
+            playerCar = new Car(lanePositions[currentLane], canvas.height - carHeight - 42, selectedCar.imageUrl);
             gameLoop(0);
         }
 
@@ -695,6 +834,9 @@
             if (phaseStartTime === 0) {
                 phaseStartTime = currentTime;
             }
+            // Movimento proporcional ao tempo: a mesma velocidade em telas de 60 Hz e de 120 Hz
+            frameScale = lastFrameTime > 0 && currentTime > 0 ? Math.min((currentTime - lastFrameTime) / (1000 / 60), 3) : 1;
+            if (currentTime > 0) lastFrameTime = currentTime;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -708,6 +850,7 @@
             drawRoad();
 
             playerCar.x = lanePositions[currentLane];
+            if (nitroOn()) drawNitroFlames(playerCar, currentTime);
             playerCar.draw();
 
             if (currentTime - lastOpponentSpawnTime > opponentSpawnInterval) {
@@ -731,10 +874,13 @@
                 }
             }
 
-            score += 0.1;
+            score += 0.1 * frameScale * (nitroOn() ? 2 : 1);
             scoreDisplay.textContent = Math.floor(score);
 
-            if (currentTime - phaseStartTime > phaseDuration) {
+            phaseProgress += effSpeed() * frameScale;
+            drawProgress();
+            updateNitroButton();
+            if (phaseProgress >= phaseDistance) {
                 completePhase();
                 return;
             }
@@ -750,6 +896,7 @@
         // Add click/touch event listener to the canvas
         // pointerdown cobre mouse e toque com um evento só (antes o toque contava duas vezes e lia a posição errada)
         canvas.addEventListener('pointerdown', handleCanvasClick);
+        document.getElementById('nitroButton').addEventListener('click', fireNitro);
         document.getElementById('menuButton').addEventListener('click', () => {
             if (gameState === 'playing') {
                 gameState = 'menu';
@@ -762,7 +909,10 @@
         document.addEventListener('keydown', (e) => {
             if (gameState !== 'playing' || !playerCar) return;
 
-            if (e.key === 'ArrowLeft') {
+            if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'n' || e.key === 'N') {
+                e.preventDefault();
+                fireNitro();
+            } else if (e.key === 'ArrowLeft') {
                 currentLane = Math.max(0, currentLane - 1);
             } else if (e.key === 'ArrowRight') {
                 currentLane = Math.min(numLanes - 1, currentLane + 1);
@@ -770,6 +920,7 @@
         });
 
         loadGameData();
+        fitCanvas();
         calculateLanePositions();
         drawIdleTrack();
         showMenu();

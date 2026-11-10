@@ -2,196 +2,101 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corrida Animal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>A Fuga do Sonic · VAH Games</title>
+    <meta name="theme-color" content="#0C0D14">
+    <link rel="icon" type="image/png" href="/images/site/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Unbounded:wght@900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #388E3C; /* Fundo verde folha mais escuro */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            overflow: hidden; /* Previne barras de rolagem */
-        }
-        .game-container {
-            background-color: #4CAF50; /* Fundo verde folha ligeiramente mais claro para o contêiner */
-            border-radius: 1rem; /* Cantos arredondados */
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            max-width: 90vw;
-            width: 400px; /* Largura fixa para a área do jogo */
-        }
-        canvas {
-            background-color: #66BB6A; /* Fundo do mundo do jogo (um verde um pouco mais claro para contraste) */
-            border-radius: 0.75rem;
-            display: block;
-            touch-action: none; /* Desabilita ações de toque padrão como rolagem */
-            width: 100%; /* Torna o canvas responsivo dentro do seu contêiner */
-            height: 500px; /* Altura fixa para a área do jogo */
-            margin-bottom: 1rem;
-        }
-        .game-info {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            padding: 0 0.5rem;
-            margin-bottom: 1rem;
-            color: #e2e8f0; /* Cor de texto clara */
-            font-size: 1.25rem;
-            font-weight: 700;
-        }
-        .game-over-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            border-radius: 1rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #e2e8f0;
-            font-size: 2rem;
-            font-weight: 700;
-            text-align: center;
-            z-index: 10;
-        }
-        .hidden {
-            display: none;
-        }
-        .restart-button {
-            background-color: #4299e1; /* Azul */
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-size: 1.25rem;
-            font-weight: 700;
-            cursor: pointer;
-            border: none;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            margin-top: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .restart-button:hover {
-            background-color: #3182ce; /* Azul mais escuro */
-            transform: translateY(-2px);
-        }
-        .restart-button:active {
-            transform: translateY(0);
-            box-shadow: none;
-        }
-        .instructions {
-            color: #cbd5e0;
-            font-size: 0.9rem;
-            margin-top: 1rem;
-            text-align: center;
-        }
-        .loading-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
-            border-radius: 1rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #e2e8f0;
-            font-size: 1.5rem;
-            font-weight: 700;
-            text-align: center;
-            z-index: 20;
-        }
+        /* Visual do VAH Games (DESIGN.md) com fundo em pixel art */
+        :root { --canvas:#0C0D14; --panel:#1B1C24; --line:#292A30; --ink:#fff; --body:#E5E6EE; --muted:#BDBFCE;
+                --lime:#C7FF5B; --lime-ink:#0F1A00; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; height: 100%; }
+        body { font-family: Outfit, -apple-system, "Segoe UI", sans-serif; color: var(--body); overflow: hidden;
+               background: var(--canvas) url('/images/fuga-do-sonic/fundo-pixel.png') center bottom / cover no-repeat fixed;
+               image-rendering: pixelated; -webkit-tap-highlight-color: transparent; }
+        button { font: inherit; }
+
+        .game-container { height: 100dvh; max-width: 520px; margin: 0 auto; padding: 12px 16px 68px;
+                          display: flex; flex-direction: column; align-items: center; gap: 10px; image-rendering: auto; }
+        .top { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .top h1 { margin: 0; font-family: Unbounded, Outfit, sans-serif; font-size: clamp(15px, 4.4vw, 21px); font-weight: 900;
+                  text-transform: uppercase; color: var(--ink); white-space: nowrap; text-shadow: 0 3px 0 rgba(0,0,0,.45); }
+        .top-spacer { width: 44px; }
+        .pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px;
+                border: 0; border-radius: 999px; font-size: 15px; font-weight: 800; cursor: pointer; text-decoration: none;
+                transition: transform .12s, filter .12s, background .12s; white-space: nowrap; }
+        .pill:active { transform: translateY(1px); }
+        .pill-ghost { background: rgba(255,255,255,.12); color: var(--ink); backdrop-filter: blur(4px); }
+        .pill-ghost:hover { background: rgba(255,255,255,.22); }
+        .pill-lime { background: var(--lime); color: var(--lime-ink); }
+        .pill-lime:hover { filter: brightness(1.05); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+        @media (max-width: 420px) { .hide-sm { display: none; } }
+
+        .game-info { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .game-info > div { padding: 8px 12px; border-radius: 16px; background: rgba(27,28,36,.78); backdrop-filter: blur(4px);
+                           font-size: 18px; font-weight: 900; color: var(--ink); }
+        .game-info > div::before { content: attr(data-label); display: block; font-size: 11px; font-weight: 700; letter-spacing: .4px;
+                                   text-transform: uppercase; color: var(--muted); }
+        #rings { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; }
+        #rings::before { flex-basis: 100%; }
+        .ring-icon { width: 20px; height: 20px; background: url('/images/fuga-do-sonic/argola.png') 0 0 / 400% 100% no-repeat;
+                     image-rendering: pixelated; animation: ringSpin .4s steps(4) infinite; }
+        @keyframes ringSpin { to { background-position: -80px 0; } }
+
+        /* Área do jogo: proporção fixa 360x500, cabendo na altura da tela (antes esticava conforme a largura) */
+        .stage { position: relative; flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+        .stage-inner { position: relative; width: min(100%, calc((100dvh - 280px) * 0.72)); }
+        canvas { display: block; width: 100%; height: auto; aspect-ratio: 360 / 500; border-radius: 16px; touch-action: none;
+                 box-shadow: 0 0 0 4px rgba(12,13,20,.85), 0 10px 30px rgba(0,0,0,.6); }
+        .hint { margin: 0; padding: 8px 14px; border-radius: 16px; background: rgba(12,13,20,.78); backdrop-filter: blur(4px);
+                font-size: 13px; line-height: 1.4; color: var(--body); text-align: center; }
+        .hint b { color: var(--lime); }
+
+        .game-over-screen, .loading-screen { position: absolute; inset: 0; border-radius: 16px; display: flex; flex-direction: column;
+                                             align-items: center; justify-content: center; gap: 8px; padding: 20px; text-align: center;
+                                             background: rgba(12,13,20,.78); backdrop-filter: blur(3px); z-index: 10; }
+        .loading-screen { z-index: 20; }
+        .game-over-screen h2 { margin: 0; font-family: Unbounded, Outfit, sans-serif; font-weight: 900; font-size: 24px;
+                               text-transform: uppercase; color: var(--ink); }
+        .game-over-screen p, .loading-screen p { margin: 0; font-size: 17px; font-weight: 700; color: var(--body); }
+        .game-over-screen p b { color: var(--lime); font-size: 22px; }
+        .restart-button { margin-top: 10px; }
+        /* não depende do Tailwind (CDN) para esconder as telas de carregando/fim de jogo */
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
     <div class="game-container">
+        <div class="top">
+            <a class="pill pill-ghost" href="/" aria-label="Voltar ao VAH Games">← <span class="hide-sm">VAH Games</span></a>
+            <h1>A Fuga do Sonic</h1>
+            <span class="top-spacer"></span>
+        </div>
         <div class="game-info">
-            <div id="score">Pontuação: 0</div>
-            <div id="high-score">Recorde: 0</div>
+            <div id="score" data-label="Pontos">0</div>
+            <div id="rings" data-label="Argolas"><span class="ring-icon" aria-hidden="true"></span><span id="ringCount">0</span></div>
+            <div id="high-score" data-label="Recorde">0</div>
         </div>
-        <canvas id="gameCanvas" width="360" height="500"></canvas>
-        <div id="gameOverScreen" class="game-over-screen hidden">
-            <p>Fim de Jogo!</p>
-            <p>Sua Pontuação: <span id="finalScore">0</span></p>
-            <button id="restartButton" class="restart-button">Jogar Novamente</button>
+        <div class="stage">
+            <div class="stage-inner">
+                <canvas id="gameCanvas" width="360" height="500"></canvas>
+                <div id="gameOverScreen" class="game-over-screen hidden">
+                    <h2>Fim de jogo!</h2>
+                    <p>Você fez <b id="finalScore">0</b> pontos</p>
+                    <button id="restartButton" class="pill pill-lime restart-button" type="button">Jogar de novo</button>
+                </div>
+                <div id="loadingScreen" class="loading-screen">
+                    <p>Carregando…</p>
+                </div>
+            </div>
         </div>
-        <div id="loadingScreen" class="loading-screen">
-            <p>Carregando recursos...</p>
-        </div>
-        <div class="instructions">
-            <p>Deslize para cima para pular.</p>
-            <p>Deslize para os lados para mudar de faixa.</p>
-            <p>Use as setas do teclado para jogar no desktop.</p>
-            <p>No desktop, clique e arraste para pular ou mudar de faixa.</p>
-        </div>
+        <p class="hint">Deslize para os lados para trocar de faixa, para cima para pular e para baixo para <b>rolar</b> por baixo dos galhos (no computador: setas).<br>Cada <b>argola</b> vale 10 pontos e a cada 10 você ganha <b>+100</b>!</p>
     </div>
 
     <script type="module">
-        // Firebase imports (MANDATORY, even if not used for persistence in this game)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, query, where, addDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global variables for Firebase (MANDATORY)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let app, db, auth, userId;
-        let isAuthReady = false;
-
-        // Initialize Firebase and authenticate
-        async function initializeFirebase() {
-            try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        console.log("Firebase: User authenticated:", userId);
-                    } else {
-                        console.log("Firebase: User not authenticated. Attempting anonymous authentication...");
-                        try {
-                            if (initialAuthToken) {
-                                await signInWithCustomToken(auth, initialAuthToken);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                            userId = auth.currentUser?.uid || crypto.randomUUID(); // Fallback for anonymous
-                            console.log("Firebase: Anonymous/custom authentication successful. User ID:", userId);
-                        } catch (error) {
-                            console.error("Firebase: Authentication error:", error);
-                            userId = crypto.randomUUID(); // Fallback if auth fails
-                        }
-                    }
-                    isAuthReady = true;
-                    // You can now safely perform Firestore operations here, if needed.
-                    // For this game, we are not using Firestore for persistence.
-                });
-            } catch (error) {
-                console.error("Firebase: Error initializing Firebase:", error);
-                userId = crypto.randomUUID(); // Fallback if init fails
-                isAuthReady = true;
-            }
-        }
-
-        // Call Firebase initialization
-        initializeFirebase();
+        // VAH Games: o Firebase importado aqui nunca era usado; se o servidor dele falhasse, o jogo não abria.
 
 
         // --- Game Logic ---
@@ -214,10 +119,11 @@
         const laneWidth = canvas.width / 3; // 3 lanes
         const playerWidth = 60; // Adjusted for Sonic size
         const playerHeight = 60; // Adjusted for Sonic size
-        const chaserWidth = 50;
-        const chaserHeight = 70;
         const jumpSpeed = 20; // Increased for higher and faster jump
         const gravity = 1; // Increased for faster descent after jump peak
+        const GROUND_Y = canvas.height - playerHeight - 92; // Sonic um pouco acima da borda: o Robotnik vem atrás
+        const ROLL_FRAMES = 40;      // quadros rolando (o jogo anda por quadros, como a pista e os obstáculos)
+        const BALL_FRAME_MS = 45;    // animação rápida da bola
         let obstacleSpawnInterval = 1000; // milliseconds - now dynamic
         const minObstacleSpawnInterval = 400; // Minimum interval to prevent impossible spawns
         const intervalReductionRate = 2; // How much interval reduces per score point (adjust for difficulty)
@@ -231,6 +137,10 @@
         const roadImage = new Image();
         const smallObstacleImage = new Image();
         const largeObstacleImage = new Image();
+        const ringSheet = new Image(); // 4 quadros de 17x17 lado a lado
+        const robotnikImage = new Image();
+        const treeImage = new Image();
+        const ballSheet = new Image(); // 4 quadros de 26x68 (bola + rastro)
 
         // Setting direct links for images
         sonicRunFrames[0].src = '/images/fuga-do-sonic/Sonic-Running-1.png';
@@ -238,13 +148,21 @@
         roadImage.src = '/images/fuga-do-sonic/Estrada.png';
         smallObstacleImage.src = '/images/fuga-do-sonic/Obstaculo-pequeno.png';
         largeObstacleImage.src = '/images/fuga-do-sonic/Obstaculo-grande.png';
+        ringSheet.src = '/images/fuga-do-sonic/argola.png';
+        robotnikImage.src = '/images/fuga-do-sonic/robotnik.png';
+        treeImage.src = '/images/fuga-do-sonic/arvore.png';
+        ballSheet.src = '/images/fuga-do-sonic/bola.png';
 
         let imagesLoaded = 0;
         const allImages = [
             ...sonicRunFrames,
             roadImage,
             smallObstacleImage,
-            largeObstacleImage
+            largeObstacleImage,
+            ringSheet,
+            robotnikImage,
+            treeImage,
+            ballSheet
         ];
         const totalImages = allImages.length;
 
@@ -288,14 +206,28 @@
             this.height = playerHeight;
             this.lane = 1; // 0: left, 1: center, 2: right
             this.x = this.lane * laneWidth + (laneWidth - this.width) / 2;
-            this.y = canvas.height - this.height - 10; // Start at bottom
+            this.y = GROUND_Y;
+            this.rollFrames = 0;
             this.velocityY = 0;
             this.isJumping = false;
             this.frameIndex = 0; // Current frame index for animation
             this.animationSpeed = 8; // Animation speed (lower = faster)
             this.frameCounter = 0; // Counter to control animation speed
 
+            this.isRolling = function() { return this.rollFrames > 0; };
+
             this.draw = function() {
+                if (this.isRolling() && ballSheet.complete && ballSheet.naturalWidth) {
+                    // bola girando: 4 quadros bem rápidos, centro da bola no centro do Sonic
+                    const frame = Math.floor(performance.now() / BALL_FRAME_MS) % 4;
+                    const w = 46, h = w * 68 / 26;
+                    const ballCenter = 23.4 * (h / 68);
+                    ctx.save();
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(ballSheet, frame * 26, 0, 26, 68, this.x + this.width / 2 - w / 2, this.y + this.height / 2 - ballCenter + 8, w, h);
+                    ctx.restore();
+                    return;
+                }
                 // Draw Sonic image if loaded, otherwise draw nothing
                 if (sonicRunFrames[this.frameIndex].complete && sonicRunFrames[this.frameIndex].naturalWidth !== 0) {
                     ctx.drawImage(sonicRunFrames[this.frameIndex], this.x, this.y, this.width, this.height);
@@ -313,12 +245,14 @@
                     this.velocityY += gravity;
 
                     // Land on the ground
-                    if (this.y >= canvas.height - this.height - 10) {
-                        this.y = canvas.height - this.height - 10;
+                    if (this.y >= GROUND_Y) {
+                        this.y = GROUND_Y;
                         this.isJumping = false;
                         this.velocityY = 0;
                     }
                 }
+
+                if (this.rollFrames > 0) this.rollFrames--;
 
                 // Running animation
                 this.frameCounter++;
@@ -328,7 +262,17 @@
                 }
             };
 
+            // Rolar: passa por baixo do galho da árvore. No ar, apertar para baixo faz descer mais rápido.
+            this.roll = function() {
+                if (this.isJumping) {
+                    this.velocityY = Math.max(this.velocityY, 14);
+                    return;
+                }
+                this.rollFrames = ROLL_FRAMES;
+            };
+
             this.jump = function() {
+                if (this.isRolling()) return;
                 if (!this.isJumping) {
                     this.isJumping = true;
                     this.velocityY = -jumpSpeed;
@@ -343,42 +287,189 @@
             };
         }
 
-        // Chaser Object (Dog) - Kept as solid color
+        // Perseguidor: o Robotnik na nave, flutuando atrás do Sonic e seguindo a faixa dele com atraso
         function Chaser() {
-            this.width = chaserWidth;
-            this.height = chaserHeight;
-            this.x = canvas.width / 2 - this.width / 2; // Always in the middle lane behind
-            this.y = canvas.height - this.height + 50; // Slightly behind the player
-            this.color = '#a0aec0'; // Dog color (gray)
-
-            this.draw = function() {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                // Simple dog ears
-                ctx.beginPath();
-                ctx.moveTo(this.x + this.width / 4, this.y);
-                ctx.lineTo(this.x, this.y - this.height / 5);
-                ctx.lineTo(this.x + this.width / 2, this.y - this.height / 10);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.moveTo(this.x + this.width - this.width / 4, this.y);
-                ctx.lineTo(this.x + this.width, this.y - this.height / 5);
-                ctx.lineTo(this.x + this.width / 2, this.y - this.height / 10);
-                ctx.fill();
-            };
+            this.width = 91;
+            this.height = this.width * 198 / 192;
+            this.x = canvas.width / 2 - this.width / 2;
+            this.baseY = canvas.height - this.height + 6;
+            this.t = 0;
 
             this.update = function() {
-                // Chaser moves forward at a slightly slower pace than the game speed
-                // or just stays relative to the player's position
-                // For simplicity, we'll keep its Y static relative to the canvas bottom
+                this.t += 1 / 60;
+                const target = player.x + player.width / 2 - this.width / 2;
+                this.x += (target - this.x) * 0.06;
+            };
+
+            this.draw = function() {
+                const bob = Math.sin(this.t * 3.2) * 5 + Math.sin(this.t * 7.1) * 1.2;
+                if (robotnikImage.complete && robotnikImage.naturalWidth) {
+                    ctx.drawImage(robotnikImage, this.x, this.baseY + bob, this.width, this.height);
+                } else {
+                    ctx.fillStyle = '#C62828';
+                    ctx.fillRect(this.x, this.baseY + bob, this.width, this.height);
+                }
             };
         }
 
+        // --- Argolas ---
+        // Aparecem em fileiras no caminho; ao pegar, sobem e somem. A cada RING_BONUS_EVERY argolas, bônus de pontos.
+        const RING_SIZE = 34;
+        const RING_POINTS = 10;
+        const RING_BONUS_EVERY = 10;
+        const RING_BONUS_POINTS = 100;
+        let rings = [];
+        let ringsCollected = 0;
+        let lastRingSpawnTime = 0;
+        let nextRingDelay = 1200;
+        let popups = []; // textos de bônus que sobem
+        const ringCountDisplay = document.getElementById('ringCount');
+
+        function Ring(lane, y, lift = 0) {
+            this.lane = lane;
+            this.size = RING_SIZE;
+            this.x = lane * laneWidth + (laneWidth - this.size) / 2;
+            this.y = y;
+            this.lift = lift; // argolas em arco ficam mais altas: só se pega pulando
+            this.collected = false;
+            this.t = 0; // tempo desde que foi pega (s)
+
+            this.update = function() {
+                this.y += gameSpeed;
+                if (this.collected) {
+                    this.t += 1 / 60;
+                    this.y -= gameSpeed + 4; // sobe enquanto some
+                }
+            };
+
+            this.draw = function(time) {
+                const frame = Math.floor(time / 100) % 4;
+                const grow = this.collected ? 1 + this.t * 1.2 : 1;
+                const s = this.size * grow;
+                const x = this.x + (this.size - s) / 2;
+                const y = this.y - this.lift + (this.size - s) / 2;
+                ctx.save();
+                if (this.collected) ctx.globalAlpha = Math.max(0, 1 - this.t / 0.45);
+                ctx.imageSmoothingEnabled = false;
+                if (ringSheet.complete && ringSheet.naturalWidth) {
+                    ctx.drawImage(ringSheet, frame * 17, 0, 17, 17, x, y, s, s);
+                } else {
+                    ctx.strokeStyle = '#FFE600';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.arc(x + s / 2, y + s / 2, s / 2 - 3, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            };
+        }
+
+        // Fileira de argolas numa faixa sem obstáculo chegando; às vezes em arco por cima de um obstáculo baixo
+        function spawnRings(currentTime) {
+            const free = [0, 1, 2].filter(l => !obstacles.some(o => o.lanes.includes(l) && o.y < 200));
+            const shortAhead = obstacles.filter(o => o.type === 'short' && o.y < 60 && o.y > -60);
+            const count = 3 + Math.floor(Math.random() * 4);
+            if (shortAhead.length && Math.random() < 0.5) {
+                // arco de argolas sobre o obstáculo baixo
+                const o = shortAhead[0];
+                for (let k = 0; k < 5; k++) {
+                    const lift = Math.sin((k / 4) * Math.PI) * 70;
+                    rings.push(new Ring(o.lane, o.y - 30 - k * 42 + 90, lift));
+                }
+            } else if (free.length) {
+                const lane = free[Math.floor(Math.random() * free.length)];
+                for (let k = 0; k < count; k++) rings.push(new Ring(lane, -RING_SIZE - k * 46));
+            }
+            lastRingSpawnTime = currentTime;
+            nextRingDelay = 900 + Math.random() * 1300;
+        }
+
+        function collectRing(ring) {
+            ring.collected = true;
+            ringsCollected += 1;
+            score += RING_POINTS;
+            ringCountDisplay.textContent = ringsCollected;
+            if (ringsCollected % RING_BONUS_EVERY === 0) {
+                score += RING_BONUS_POINTS;
+                popups.push({ text: `${ringsCollected} argolas! +${RING_BONUS_POINTS}`, y: canvas.height / 2, t: 0 });
+            }
+        }
+
+        function ringTouchesPlayer(ring) {
+            const pad = 6;
+            const ry = ring.y - ring.lift;
+            return ring.lane === player.lane &&
+                   player.x + pad < ring.x + ring.size && player.x + player.width - pad > ring.x &&
+                   player.y + pad < ry + ring.size && player.y + player.height - pad > ry;
+        }
+
+        function drawPopups() {
+            popups.forEach(p => {
+                p.t += 1 / 60;
+                const a = Math.max(0, 1 - p.t / 1.4);
+                ctx.save();
+                ctx.globalAlpha = a;
+                ctx.font = '900 26px Outfit, Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = 'rgba(12,13,20,0.85)';
+                ctx.fillStyle = '#FFE600';
+                const y = p.y - p.t * 60;
+                ctx.strokeText(p.text, canvas.width / 2, y);
+                ctx.fillText(p.text, canvas.width / 2, y);
+                ctx.restore();
+            });
+            popups = popups.filter(p => p.t < 1.4);
+        }
+
         // Obstacle Object
+        // Árvore com galho: o tronco ocupa uma faixa (bate sempre, nem pulando passa) e o galho cobre a
+        // faixa vizinha (só passa rolando). side = 1 galho para a direita, -1 para a esquerda.
+        const TREE_SCALE = 0.9;
+        const TREE_TRUNK_X = 88; // centro do tronco na imagem (230x189), com o galho para a direita
+        function Tree(lane, side) {
+            this.type = 'tree';
+            this.lane = lane;
+            this.side = side;
+            this.branchLane = lane + side;
+            this.lanes = [lane, lane + side];
+            this.width = 230 * TREE_SCALE;
+            this.height = 189 * TREE_SCALE;
+            this.y = -this.height;
+            const laneCenter = lane * laneWidth + laneWidth / 2;
+            const trunk = TREE_TRUNK_X * TREE_SCALE;
+            this.x = side === 1 ? laneCenter - trunk : laneCenter - (this.width - trunk);
+
+            this.update = function() { this.y += gameSpeed; };
+
+            this.draw = function() {
+                if (!(treeImage.complete && treeImage.naturalWidth)) return;
+                ctx.save();
+                if (this.side === 1) {
+                    ctx.drawImage(treeImage, this.x, this.y, this.width, this.height);
+                } else {
+                    ctx.translate(this.x + this.width, this.y);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(treeImage, 0, 0, this.width, this.height);
+                }
+                ctx.restore();
+            };
+
+            // faixa vertical onde a árvore bate (base do tronco e altura do galho)
+            this.hits = function(p) {
+                const top = this.y + this.height * 0.3, bottom = this.y + this.height * 0.82;
+                if (p.y + p.height - 8 < top || p.y + 8 > bottom) return false;
+                if (p.lane === this.lane) return true;                 // tronco
+                if (p.lane === this.branchLane) return !p.isRolling(); // galho: só rolando
+                return false;
+            };
+        }
+
         function Obstacle(lane, type) {
             this.width = (type === 'tall') ? 80 : 60; // Adjust width for image
             this.height = (type === 'tall') ? 80 : 40; // Adjust height for image
             this.lane = lane;
+            this.lanes = [lane];
             this.x = this.lane * laneWidth + (laneWidth - this.width) / 2;
             this.y = -this.height; // Start off-screen at the top
             this.type = type; // Store type to choose correct image
@@ -409,6 +500,12 @@
             player = new Player();
             chaser = new Chaser();
             obstacles = [];
+            rings = [];
+            popups = [];
+            ringsCollected = 0;
+            lastRingSpawnTime = 0;
+            nextRingDelay = 1200;
+            ringCountDisplay.textContent = 0;
             score = 0;
             gameOver = false;
             gameSpeed = 5;
@@ -417,12 +514,12 @@
             roadY1 = 0; // Reset road position
             roadY2 = -canvas.height; // Reset road position
             updateScoreDisplay();
-            highScoreDisplay.textContent = `Recorde: ${highScore}`;
+            highScoreDisplay.textContent = `${highScore}`;
             gameOverScreen.classList.add('hidden');
         }
 
         function updateScoreDisplay() {
-            scoreDisplay.textContent = `Pontuação: ${Math.floor(score)}`;
+            scoreDisplay.textContent = `${Math.floor(score)}`;
         }
 
         function checkCollision(player, obstacle) {
@@ -457,7 +554,14 @@
             const currentObstacleSpawnInterval = Math.max(minObstacleSpawnInterval, 1000 - Math.floor(score / 10) * intervalReductionRate);
 
             // Spawn obstacles
-            if (currentTime - lastObstacleSpawnTime > currentObstacleSpawnInterval) {
+            if (currentTime - lastObstacleSpawnTime > currentObstacleSpawnInterval && score > 25 && Math.random() < 0.18
+                && !obstacles.some(o => o.y < 120)) {
+                // árvore: tronco numa faixa, galho na vizinha; a terceira faixa fica livre
+                const lane = Math.floor(Math.random() * 3);
+                const side = lane === 0 ? 1 : lane === 2 ? -1 : (Math.random() < 0.5 ? 1 : -1);
+                obstacles.push(new Tree(lane, side));
+                lastObstacleSpawnTime = currentTime + 500; // um respiro depois da árvore
+            } else if (currentTime - lastObstacleSpawnTime > currentObstacleSpawnInterval) {
                 const availableLanes = [0, 1, 2];
                 const numObstaclesToSpawn = Math.random() < (score > 100 ? 0.4 : 0.1) ? 2 : 1; // Chance to spawn 2 obstacles after score 100
 
@@ -479,6 +583,10 @@
             // Update and filter obstacles
             obstacles = obstacles.filter(obstacle => {
                 obstacle.update();
+                if (obstacle.type === 'tree') {
+                    if (obstacle.hits(player)) { endGame(); return false; }
+                    return obstacle.y < canvas.height + obstacle.height;
+                }
                 // Check for collision
                 if (checkCollision(player, obstacle)) {
                     // If player is jumping
@@ -501,6 +609,14 @@
                 return obstacle.y < canvas.height + obstacle.height;
             });
 
+            // Argolas: aparecem, andam com a pista e são pegas ao encostar no Sonic
+            if (currentTime - lastRingSpawnTime > nextRingDelay) spawnRings(currentTime);
+            rings.forEach(ring => {
+                ring.update();
+                if (!ring.collected && ringTouchesPlayer(ring)) collectRing(ring);
+            });
+            rings = rings.filter(r => (r.collected ? r.t < 0.45 : r.y < canvas.height + r.size));
+
             updateScoreDisplay();
 
             // Draw
@@ -517,8 +633,10 @@
             }
 
             obstacles.forEach(obstacle => obstacle.draw());
+            rings.forEach(ring => ring.draw(currentTime));
             player.draw();
-            chaser.draw(); // Chaser is drawn behind the player
+            chaser.draw(); // o Robotnik está mais perto de quem olha: desenhado por cima do Sonic (e da bola)
+            drawPopups();
 
             requestAnimationFrame(gameLoop);
         }
@@ -531,7 +649,7 @@
             if (score > highScore) {
                 highScore = Math.floor(score);
                 localStorage.setItem('subwaySurfersHighScore', highScore);
-                highScoreDisplay.textContent = `Recorde: ${highScore}`;
+                highScoreDisplay.textContent = `${highScore}`;
             }
         }
 
@@ -568,8 +686,10 @@
                     player.changeLane(-1); // Swipe left
                 }
             } else { // Vertical swipe (jump)
-                if (dy < 0) { // Swiping upwards
+                if (dy < -20) { // Swiping upwards
                     player.jump(); // Trigger jump
+                } else if (dy > 20) { // para baixo: rolar
+                    player.roll();
                 }
             }
         });
@@ -599,8 +719,10 @@
                     player.changeLane(-1); // Drag left
                 }
             } else { // Vertical drag (jump)
-                if (dy < 0) { // Drag upwards
+                if (dy < -20) { // Drag upwards
                     player.jump(); // Trigger jump
+                } else if (dy > 20) { // para baixo: rolar
+                    player.roll();
                 }
             }
         });
@@ -611,6 +733,11 @@
             switch (e.key) {
                 case 'ArrowUp':
                     player.jump();
+                    break;
+                case 'ArrowDown':
+                case 's':
+                    e.preventDefault();
+                    player.roll();
                     break;
                 case 'ArrowLeft':
                     player.changeLane(-1);
