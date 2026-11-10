@@ -106,6 +106,75 @@ const GAMES = [
     tagline: 'Junte os números até chegar ao 2048.',
     isNew: true,
   },
+  {
+    id: 'termo',
+    title: 'Termo',
+    image: '/images/site/capa-termo.svg',
+    rating: 5,
+    gameLink: '/termo',
+    category: 'quebra-cabeca',
+    tagline: 'Descubra a palavra do dia em 6 tentativas.',
+    isNew: true,
+    latest: true, // leva mais recente: aparece primeiro em Novidades
+  },
+  // Sudoku: interface própria + motor robatron/sudoku.js (MIT) em src/games/Sudoku
+  {
+    id: 'sudoku',
+    title: 'Sudoku',
+    image: '/images/site/capa-sudoku.svg',
+    rating: 5,
+    gameLink: '/sudoku',
+    category: 'quebra-cabeca',
+    tagline: 'Complete a grade de 1 a 9 sem repetir.',
+    isNew: true,
+    latest: true, // leva mais recente: aparece primeiro em Novidades
+  },
+  {
+    id: 'cobrinha',
+    title: 'Cobrinha',
+    image: '/images/site/capa-cobrinha.svg',
+    rating: 5,
+    gameLink: '/cobrinha',
+    category: 'arcade',
+    tagline: 'Coma as frutas, cresça e não bata em nada.',
+    isNew: true,
+    latest: true, // leva mais recente: aparece primeiro em Novidades
+  },
+  {
+    id: 'duelo-de-mestres',
+    title: 'Duelo de Mestres',
+    image: '/images/site/capa-duelo-de-mestres.svg',
+    rating: 5,
+    gameLink: '/duelo-de-mestres',
+    category: 'tabuleiro',
+    tagline: 'Use as cartas de movimento e derrube o mestre rival.',
+    isNew: true,
+    latest: true, // leva mais recente: aparece primeiro em Novidades
+  },
+  // Hextris: Hextris/hextris (GPL-3.0) em public/games/hextris
+  {
+    id: 'hextris',
+    title: 'Hextris',
+    image: '/images/site/capa-hextris.svg',
+    rating: 5,
+    gameLink: '/games/hextris/index.html',
+    category: 'quebra-cabeca',
+    tagline: 'Gire o hexágono e junte blocos da mesma cor.',
+    isNew: true,
+    latest: true, // leva mais recente: aparece primeiro em Novidades
+  },
+  // Torre: iamkun/tower_game (MIT) em public/games/torre
+  {
+    id: 'torre',
+    title: 'Torre',
+    image: '/images/site/capa-torre.svg',
+    rating: 5,
+    gameLink: '/games/torre/index.html',
+    category: 'arcade',
+    tagline: 'Solte os blocos na hora certa e erga o prédio.',
+    isNew: true,
+    latest: true, // leva mais recente: aparece primeiro em Novidades
+  },
   // Fazenda: hub "Nem que a Vaca Tussa" (repositório hebercamara/Nem-que-a-Vaca-Tussa),
   // build web em public/games/fazenda. Jogos de grupo para um celular só.
   ...[
@@ -148,6 +217,8 @@ const GAMES = [
 
 const FARM_GAMES = GAMES.filter((g) => g.farm);
 const SOLO_GAMES = GAMES.filter((g) => !g.farm);
+// Novidades: a leva mais recente (latest) primeiro, depois os outros jogos marcados como novos
+const NEW_GAMES = [...SOLO_GAMES.filter((g) => g.isNew && g.latest), ...SOLO_GAMES.filter((g) => g.isNew && !g.latest)];
 
 // Cada categoria usa um dos gradientes de seção do DESIGN.md
 const CATEGORIES = [
@@ -303,7 +374,7 @@ const Hero = ({ game }) => (
             Jogue grátis,<br />direto no navegador
           </h1>
           <p className="max-w-md text-body-lg text-body">
-            Corrida, aventura, arcade, xadrez, damas e desenho com os amigos. Sem instalar nada — é só clicar e jogar.
+            Corrida, arcade, Termo, Sudoku, xadrez, damas e desenho com os amigos. Sem instalar nada — é só clicar e jogar.
           </p>
           <div className="flex flex-wrap gap-3">
             <a href={game.gameLink} className="btn-lime px-5">
@@ -515,6 +586,11 @@ const RANKED_GAMES = [
   ['nitro-mania', 'Nitro Mania'],
   ['fuga-do-sonic', 'A Fuga do Sonic'],
   ['arthur', 'Arthur'],
+  ['termo', 'Termo'],
+  ['sudoku', 'Sudoku'],
+  ['cobrinha', 'Cobrinha'],
+  ['hextris', 'Hextris'],
+  ['torre', 'Torre'],
 ];
 
 const GeneralRanking = () => {
@@ -710,7 +786,7 @@ export default function Home() {
             />
           )}
 
-          <Carousel id="novidades" title="Novidades" games={SOLO_GAMES.filter((g) => g.isNew)} />
+          <Carousel id="novidades" title="Novidades" games={NEW_GAMES} />
           <Categories active={category} onSelect={setCategory} />
           <Carousel id="jogos" title="Todos os jogos" games={SOLO_GAMES} />
           <FarmSection />

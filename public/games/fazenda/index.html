@@ -7,8 +7,8 @@
     <meta name="theme-color" content="#8B5A2B" />
     <title>Nem que a Vaca Tussa!</title>
     <link rel="preload" as="image" href="/games/fazenda/img/vaca.webp" />
-    <script type="module" crossorigin src="/games/fazenda/assets/index-DB8xWtub.js"></script>
-    <link rel="stylesheet" crossorigin href="/games/fazenda/assets/index-CKinbCJc.css">
+    <script type="module" crossorigin src="/games/fazenda/assets/index-DJ-AMp05.js"></script>
+    <link rel="stylesheet" crossorigin href="/games/fazenda/assets/index-CTAbwcvs.css">
   </head>
   <body>
     <!-- Tela 1: Hub de jogos -->
@@ -26,6 +26,10 @@
             <span class="title-bottom">Tussa!</span>
           </h1>
           <p class="tagline">Jogos de equipe da fazenda. Escolha o seu:</p>
+          <div id="online-entry" class="online-entry hidden">
+            <button id="btn-online-join" class="btn btn-wood">🌐 Entrar numa sala online</button>
+            <button id="btn-online-resume" class="link-btn hidden"></button>
+          </div>
         </div>
 
         <div id="game-list" class="game-list"></div>
@@ -243,6 +247,20 @@
 
       <div class="bottom-actions">
         <button id="btn-rules-play" class="btn btn-orange btn-big">Bora jogar!</button>
+      </div>
+    </section>
+
+    <!-- Tela 7: Salas online (criar/entrar, sala de espera e partidas) -->
+    <section id="screen-online" class="screen screen-game screen-online">
+      <header class="screen-header">
+        <button class="icon-btn" id="btn-online-back" aria-label="Voltar">←</button>
+        <div class="sign"><h2 id="online-title">Salas online</h2></div>
+        <span class="icon-btn-spacer"></span>
+      </header>
+      <div class="scroll" id="online-body"></div>
+      <div class="bottom-actions" id="online-actions"></div>
+      <div id="online-cough-fx" class="cough-fx" aria-hidden="true">
+        <img src="/games/fazenda/img/vaca-tossindo.webp" alt="" width="520" height="417" />
       </div>
     </section>
 

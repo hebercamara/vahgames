@@ -104,14 +104,47 @@ no mesmo aparelho. Se o anfitrião sair, o próximo da lista vira anfitrião.
 Onde fica o código: no repositório **Nem-que-a-Vaca-Tussa** (é lá que estão os jogos), com o
 modo online aparecendo só na versão web (a do portal) até ser testado no app Android.
 
-## 6. O que precisa ser feito no Firebase (uma vez)
+## 6. Situação atual
 
-No [console do Firebase](https://console.firebase.google.com/), projeto **vah-games**:
+As etapas 1 a 4 estão prontas no repositório **Nem-que-a-Vaca-Tussa** (`src/online/`), com testes
+das regras (`npm test`). O build da Fazenda no VAH já inclui as salas, mas elas ficam **escondidas**
+até o Firebase ser configurado. Para testar antes disso, abra
+`/games/fazenda/index.html?rede=local` em duas ou mais abas do mesmo navegador.
 
-1. **Realtime Database** → Criar banco de dados (região dos EUA, `us-central1`). A URL deve ser
-   `https://vah-games-default-rtdb.firebaseio.com`, que é a que o ranking já usa; se for outra,
-   troque `DATABASE_URL` em `public/js/vah-ranking.js`.
-2. **Regras**: colar o conteúdo de `database.rules.json` na aba Regras e publicar (ou rodar
-   `firebase deploy --only database`).
-3. Para as salas (etapa 1): **Authentication** → Métodos de login → ativar **Anônimo**, e
-   registrar o app web em Configurações do projeto para pegar o `firebaseConfig`.
+Ainda não feito: tempo limite por vez na Vaca, mata-mata no empate online, emojis de reação e
+limpeza automática de salas antigas.
+
+## 7. Passo a passo no Firebase (uma vez)
+
+No [console do Firebase](https://console.firebase.google.com/), entre no projeto **vah-games**.
+
+**A. Criar o banco de dados**
+1. Menu à esquerda: **Criação** (Build) → **Realtime Database** → **Criar banco de dados**.
+2. Local: **Estados Unidos (us-central1)** → Avançar.
+3. Regras de segurança: escolha **Começar no modo bloqueado** → Ativar.
+4. Confira o endereço que aparece no topo da aba Dados. Deve ser
+   `https://vah-games-default-rtdb.firebaseio.com`. Se for outro, avise (ele é usado no ranking e
+   nas salas).
+
+**B. Colar as regras**
+1. Ainda no Realtime Database, aba **Regras**.
+2. Apague o que estiver lá e cole todo o conteúdo do arquivo `database.rules.json` (raiz do
+   repositório vahgames).
+3. **Publicar**. A partir daqui o ranking geral já passa a ser online.
+
+**C. Ativar o login anônimo** (para as salas)
+1. Menu: **Criação** → **Authentication** → **Vamos começar** (se aparecer).
+2. Aba **Método de login** → **Anônimo** → ative a chave → **Salvar**.
+3. Aba **Configurações** → **Domínios autorizados**: confira que `vah-games.web.app` está na
+   lista (normalmente já está).
+
+**D. Registrar o app web e pegar a configuração**
+1. Engrenagem ao lado de "Visão geral do projeto" → **Configurações do projeto**.
+2. Em **Seus apps**, clique no ícone **</>** (Web). Apelido: `VAH Games`. Não marque o Hosting
+   (ele já existe) → **Registrar app**.
+3. Aparece um bloco `const firebaseConfig = { ... }`. Copie os valores de `apiKey` e `appId`
+   (e confira `databaseURL`). Esses valores não são senhas: o Firebase foi feito para eles ficarem
+   no site, e quem protege os dados são as regras do passo B.
+4. Coloque esses valores em `.env.portal` no repositório Nem-que-a-Vaca-Tussa
+   (`VITE_FIREBASE_API_KEY` e `VITE_FIREBASE_APP_ID`), rode `npm run build:portal` e copie o
+   `dist-portal` para `public/games/fazenda` (ver README). Ou mande os valores que a gente faz isso.

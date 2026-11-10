@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<!--
+  Torre — baseado em "Tower Building Game" (https://github.com/iamkun/tower_game), licenciado sob MIT
+  (veja LICENSE). Modificações VAH Games: página nova em português (abertura, fim de jogo e textos),
+  imagens com texto refeitas em português (assets/score.png, assets/tutorial.png), rastreador e
+  compartilhamento do WeChat removidos, botões do portal e ranking geral adicionados.
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
+<title>Torre · VAH Games</title>
+<meta name="description" content="Torre — solte os blocos na hora certa e construa o prédio mais alto. Jogue grátis no VAH Games.">
+<meta name="theme-color" content="#0C0D14">
+<link rel="icon" type="image/png" href="/images/site/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800;900&family=Unbounded:wght@900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { font-family: Outfit, -apple-system, "Segoe UI", sans-serif; background: #0C0D14; color: #fff; overflow: hidden;
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  #canvas { position: fixed; inset: 0; margin: auto; }
+  .hide { display: none !important; }
+  .content { position: relative; margin: 0 auto; height: 100vh; overflow: hidden; }
+  @font-face { font-family: wenxue; src: url(assets/wenxue.woff) format("woff"), url(assets/wenxue.ttf) format("truetype"); }
+
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 20px; padding: 24px; text-align: center; }
+  .loading, .landing { background: linear-gradient(180deg, #2B1E66 0%, #6842FF 55%, #F95240 100%); }
+  .title { font-family: Unbounded, Outfit, sans-serif; font-weight: 900; font-size: clamp(40px, min(13vh, 15vw), 96px); line-height: 1;
+    color: #FFD34D; text-shadow: 0 4px 0 #8B603A, 0 8px 24px rgba(0,0,0,.4); letter-spacing: 2px; }
+  .subtitle { font-size: 18px; font-weight: 700; color: #F3F0FF; max-width: 300px; line-height: 1.35; }
+  .hook { font-size: 56px; line-height: 1; }
+  .swing { animation: sw 2s ease-in-out alternate infinite; transform-origin: top center; }
+  @keyframes sw { 0% { transform: rotate(5deg); } 100% { transform: rotate(-5deg); } }
+  .bar { width: 70%; max-width: 280px; height: 14px; border-radius: 9999px; background: rgba(255,255,255,.2); overflow: hidden; }
+  .percent { height: 100%; width: 0; background: #C7FF5B; border-radius: 9999px; transition: width .2s; }
+  .loading .pct { font-size: 28px; font-weight: 900; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 52px; padding: 0 32px; border: 0;
+    border-radius: 9999px; font: 800 18px Outfit, sans-serif; cursor: pointer; text-decoration: none; }
+  .btn:active { opacity: .75; }
+  .btn-lime { background: #C7FF5B; color: #0F1A00; box-shadow: 0 6px 0 #7FAA2A, 0 12px 24px rgba(0,0,0,.35); }
+  .btn-ghost { background: rgba(255,255,255,.14); color: #fff; }
+
+  .slideTop { animation: st .9s ease-in forwards; }
+  @keyframes st { to { transform: translate3d(0, -110%, 0); } }
+  .slideBottom { animation: sb .9s ease-in forwards; }
+  @keyframes sb { to { transform: translate3d(0, 200%, 0); } }
+
+  .modal { position: absolute; inset: 0; background: rgba(12,13,20,.75); display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .modal-card { width: 100%; max-width: 320px; background: #1F2026; border: 2px solid #292A30; border-radius: 22px; padding: 28px 24px;
+    display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+  .modal-card h2 { font-family: Unbounded, Outfit, sans-serif; font-size: 26px; font-weight: 900; color: #FFD34D; }
+  .modal-card .big { font-family: wenxue, Outfit, sans-serif; font-size: 64px; line-height: 1; color: #C7FF5B; }
+  .modal-card .muted { color: #BDBFCE; font-size: 15px; }
+  .modal-card .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  .vah-top { position: fixed; left: 12px; bottom: 12px; z-index: 50; display: flex; gap: 8px; }
+  .vah-btn { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border: 0; border-radius: 9999px;
+    background: rgba(12,13,20,.75); color: #fff; font: 700 14px Outfit, sans-serif; text-decoration: none; cursor: pointer; }
+  .vah-btn:active { opacity: .7; }
+  .sound { position: fixed; right: 12px; bottom: 12px; z-index: 50; }
+</style>
+</head>
+<body>
+<canvas id="canvas" class="hide"></canvas>
+<div class="content">
+  <div class="loading screen">
+    <div class="hook swing" aria-hidden="true">🏗️</div>
+    <div class="pct">0%</div>
+    <div class="bar"><div class="percent"></div></div>
+    <div class="subtitle">Carregando…</div>
+  </div>
+  <div class="landing screen hide">
+    <div class="action-1" style="display:flex;flex-direction:column;align-items:center;gap:16px">
+      <div class="hook swing" aria-hidden="true">🏗️</div>
+      <h1 class="title swing">TORRE</h1>
+      <p class="subtitle">Toque na tela para soltar o bloco. Acerte em cheio para ganhar pontos em dobro!</p>
+    </div>
+    <div class="action-2" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+      <button id="start" class="btn btn-lime" type="button">▶ Jogar</button>
+      <button class="btn btn-ghost js-ranking" type="button">🏆 Ranking</button>
+    </div>
+  </div>
+  <div id="modal" class="modal hide">
+    <div class="modal-card">
+      <h2>Fim de jogo</h2>
+      <div class="muted">Sua torre teve <strong id="floors">0</strong> andares</div>
+      <div id="score" class="big">0</div>
+      <div class="muted">pontos</div>
+      <div class="row">
+        <button class="btn btn-lime js-reload" type="button">↻ Jogar de novo</button>
+        <button class="btn btn-ghost js-ranking" type="button">🏆 Ranking</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="vah-top"><a class="vah-btn" href="/">&larr; VAH Games</a></div>
+<button class="vah-btn sound js-sound" type="button" aria-label="Ligar ou desligar o som">🔊</button>
+
+<script src="./dist/main.js"></script>
+<script src="./assets/zepto-1.1.6.min.js"></script>
+<script>
+  var domReady, canvasReady, loadError, gameStart, game, score = 0, successCount = 0, ended = false
+  var soundOn = true
+  try { soundOn = localStorage.getItem('vah-torre-som') !== '0' } catch (e) {}
+
+  // Tamanho do jogo: retrato, no máximo 1,5 de altura para 1 de largura
+  var gameWidth = window.innerWidth
+  var gameHeight = window.innerHeight
+  var ratio = 1.5
+  if (gameHeight / gameWidth < ratio) gameWidth = Math.ceil(gameHeight / ratio)
+  $('.content').css({ height: gameHeight + 'px', width: gameWidth + 'px' })
+
+  function hideLoading() {
+    if (domReady && canvasReady) {
+      $('#canvas').removeClass('hide')
+      setTimeout(function () {
+        $('.loading').addClass('hide')
+        $('.landing').removeClass('hide')
+      }, 400)
+    }
+  }
+
+  function updateLoading(status) {
+    if (status.failed > 0 && !loadError) {
+      loadError = true
+      $('.loading .subtitle').text('Erro de conexão. Recarregue a página para tentar de novo.')
+      return
+    }
+    var percent = parseInt((status.success / status.total) * 100, 10)
+    if (percent === 100 && !canvasReady) {
+      canvasReady = true
+      hideLoading()
+    }
+    percent = Math.min(percent, 98) + '%'
+    $('.loading .pct').text(percent)
+    $('.loading .percent').css({ width: percent })
+  }
+
+  function showGameOver() {
+    if (ended) return
+    ended = true
+    $('#score').text(score)
+    $('#floors').text(successCount)
+    $('#modal').removeClass('hide')
+    if (window.VAHRanking && score > 0) setTimeout(function () { VAHRanking.submit('torre', score) }, 600)
+  }
+
+  var option = {
+    width: gameWidth,
+    height: gameHeight,
+    canvasId: 'canvas',
+    soundOn: soundOn,
+    setGameScore: function (s) { score = s },
+    setGameSuccess: function (s) { successCount = s },
+    setGameFailed: function (f) { if (f >= 3) showGameOver() }
+  }
+
+  function gameReady() {
+    game = TowerGame(option)
+    game.load(function () {
+      game.init()
+    }, updateLoading)
+  }
+  gameReady()
+
+  function indexHide() {
+    $('.landing .action-1').addClass('slideTop')
+    $('.landing .action-2').addClass('slideBottom')
+    setTimeout(function () { $('.landing').addClass('hide') }, 900)
+  }
+
+  $('#start').on('click', function () {
+    if (gameStart) return
+    gameStart = true
+    if (soundOn) setTimeout(function () { game.playBgm() })
+    indexHide()
+    setTimeout(game.start, 400)
+  })
+
+  $('.js-reload').on('click', function () {
+    window.location.href = window.location.pathname + '?s=' + (+new Date())
+  })
+
+  $('.js-ranking').on('click', function (e) {
+    e.stopPropagation()
+    if (window.VAHRanking) VAHRanking.show('torre')
+  })
+
+  function paintSound() { $('.js-sound').text(soundOn ? '🔊' : '🔇') }
+  paintSound()
+  $('.js-sound').on('click', function (e) {
+    e.stopPropagation()
+    soundOn = !soundOn
+    try { localStorage.setItem('vah-torre-som', soundOn ? '1' : '0') } catch (err) {}
+    paintSound()
+    if (!game) return
+    game.soundOn = soundOn
+    if (!soundOn) game.pauseBgm()
+    else if (gameStart) game.playBgm()
+  })
+  // Os botões do portal não devem soltar um bloco
+  ;['.vah-top', '.js-sound'].forEach(function (sel) {
+    var el = document.querySelector(sel)
+    ;['touchstart', 'mousedown', 'click'].forEach(function (t) {
+      el.addEventListener(t, function (e) { e.stopPropagation() }, { passive: true })
+    })
+  })
+
+  window.addEventListener('load', function () {
+    domReady = true
+    hideLoading()
+  }, false)
+</script>
+<script src="/js/vah-ranking.js"></script>
+</body>
+</html>
