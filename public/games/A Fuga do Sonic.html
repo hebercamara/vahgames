@@ -455,10 +455,11 @@
                 ctx.restore();
             };
 
-            // faixa vertical onde a árvore bate (base do tronco e altura do galho)
+            // bate quando os pés do Sonic chegam à base do tronco; o galho fica na mesma profundidade
             this.hits = function(p) {
-                const top = this.y + this.height * 0.3, bottom = this.y + this.height * 0.82;
-                if (p.y + p.height - 8 < top || p.y + 8 > bottom) return false;
+                const top = this.y + this.height * 0.62, bottom = this.y + this.height * 0.9;
+                const f = feetBox(p);
+                if (f.y + f.h < top || f.y > bottom) return false;
                 if (p.lane === this.lane) return true;                 // tronco
                 if (p.lane === this.branchLane) return !p.isRolling(); // galho: só rolando
                 return false;
@@ -522,12 +523,21 @@
             scoreDisplay.textContent = `${Math.floor(score)}`;
         }
 
+        // Áreas de batida: a vista é por trás do Sonic, então vale a faixa dos PÉS dele contra a parte
+        // desenhada do obstáculo (as imagens têm bordas transparentes). Antes a batida era no topo da
+        // cabeça, uns 35 px antes de o obstáculo encostar de verdade.
+        function feetBox(p) {
+            return { x: p.x + 12, w: p.width - 24, y: p.y + p.height - 22, h: 20 };
+        }
+        function obstacleBox(o) {
+            // medidas tiradas das próprias imagens (parte sólida, em px de jogo)
+            return o.type === 'short'
+                ? { x: o.x + 9, w: 43, y: o.y + 7, h: 28 }
+                : { x: o.x + 7, w: 68, y: o.y + 6, h: 70 };
+        }
         function checkCollision(player, obstacle) {
-            // Simple AABB collision detection
-            return player.x < obstacle.x + obstacle.width &&
-                   player.x + player.width > obstacle.x &&
-                   player.y < obstacle.y + obstacle.height &&
-                   player.y + player.height > obstacle.y;
+            const a = feetBox(player), b = obstacleBox(obstacle);
+            return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
         }
 
         function gameLoop(currentTime) {
@@ -632,9 +642,11 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            obstacles.forEach(obstacle => obstacle.draw());
+            // camadas: obstáculos baixos e argolas, Sonic, árvores (o galho passa por cima dele), Robotnik
+            obstacles.forEach(obstacle => { if (obstacle.type !== 'tree') obstacle.draw(); });
             rings.forEach(ring => ring.draw(currentTime));
             player.draw();
+            obstacles.forEach(obstacle => { if (obstacle.type === 'tree') obstacle.draw(); });
             chaser.draw(); // o Robotnik está mais perto de quem olha: desenhado por cima do Sonic (e da bola)
             drawPopups();
 
