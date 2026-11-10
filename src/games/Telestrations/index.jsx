@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Lobby from './Lobby';
 import CanvasBoard from './CanvasBoard';
 import GuessBoard from './GuessBoard';
@@ -62,7 +63,7 @@ const TelestrationsGame = () => {
 
     const handleTurnFinish = (data) => {
         // data: { type: 'drawing' | 'guess', content: string }
-        const newStep = { ...data, author: currentPlayer || `Jogador ${myChain.length + 1}` };
+        const newStep = { ...data, author: currentPlayer || `Jogador ${myChain.length}` }; // myChain[0] é a palavra sorteada
         const newChain = [...myChain, newStep];
         setMyChain(newChain);
 
@@ -132,31 +133,38 @@ const TelestrationsGame = () => {
     };
 
     return (
-        <div className="min-h-screen bg-canvas text-ink flex flex-col items-center py-8">
-            <h1 className="font-display text-[28px] md:text-[40px] font-black uppercase text-ink mb-8">
-                LOUSA MÁGICA
-            </h1>
+        <div className="min-h-screen bg-canvas text-ink flex flex-col items-center px-4 pb-8 pt-4 md:px-8">
+            <header className="mb-4 flex w-full max-w-5xl items-center justify-between gap-3 md:mb-8">
+                <Link to="/" className="btn-ghost shrink-0 px-4" aria-label="Voltar ao VAH Games">
+                    <span aria-hidden="true">←</span>
+                    <span className="hidden sm:inline">VAH Games</span>
+                </Link>
+                <h1 className="font-display min-w-0 truncate text-[20px] md:text-[32px] font-black uppercase text-ink">
+                    Lousa Mágica
+                </h1>
+                <span className="w-10 shrink-0 sm:w-28" aria-hidden="true" />
+            </header>
 
             {gameState === 'LOBBY' && (
                 <Lobby onJoinRoom={handleJoin} onGameStart={handleStartGame} />
             )}
 
             {gameState === 'INTERMISSION' && (
-                <div className="flex flex-col items-center justify-center p-8 bg-white/[0.07] rounded-xs border-2 border-lime">
-                    <h2 className="text-4xl font-bold text-violet-bright mb-4">TEMPO ESGOTADO!</h2>
+                <div className="flex w-full max-w-xl flex-col items-center justify-center p-6 md:p-8 text-center bg-white/[0.07] rounded-xs border-2 border-lime">
+                    <h2 className="text-[28px] md:text-4xl font-bold text-violet-bright mb-4">VEZ DO PRÓXIMO!</h2>
                     <p className="text-xl text-body mb-8">Passe o dispositivo para o próximo jogador.</p>
                     <div className="text-6xl mb-8">🔄📱</div>
                     <button
                         onClick={startNextLocalTurn}
-                        className="btn-lime h-12 px-6 text-[16px] font-extrabold"
+                        className="btn-lime h-auto min-h-12 whitespace-normal px-6 py-3 text-[16px] font-extrabold"
                     >
-                        PRÓXIMO JOGADOR: CLIQUE PARA INICIAR
+                        Próximo jogador: toque para começar
                     </button>
                 </div>
             )}
 
             {gameState === 'REVEAL_MOMENT' && (
-                <div className="flex flex-col items-center justify-center p-8 bg-canvas rounded-xs max-w-2xl text-center">
+                <div className="flex flex-col items-center justify-center p-4 md:p-8 bg-canvas rounded-xs max-w-2xl text-center">
                     <h2 className="font-display text-[28px] md:text-[36px] font-black uppercase text-lime mb-8">
                         FIM DE JOGO!
                     </h2>

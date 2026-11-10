@@ -115,6 +115,59 @@ function InkOptions({ label, value, options, onChange }) {
   );
 }
 
+// Tela cheia de vitória: animação curta do samurai do vencedor (sem som), que trava no quadro
+// final com o braço erguido; então aparece o texto. Se o vídeo não tocar, mostra o quadro final.
+function VictoryScreen({ winner, mode, human, reason, onPlayAgain, onClose }) {
+  const [frozen, setFrozen] = useState(false);
+  const file = winner === BLUE ? 'azul' : 'vermelho';
+  const color = TEAM[winner].ink;
+  const subtitle = mode === 'ai' ? (winner === human ? 'Você venceu!' : 'O computador venceu.') : null;
+
+  useEffect(() => {
+    const t = setTimeout(() => setFrozen(true), 4500); // garantia caso o vídeo não dispare "ended"
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div className="aq-victory fixed inset-0 z-[3000] flex items-end justify-center overflow-hidden bg-black" role="dialog" aria-modal="true" aria-label={`Vitória do ${TEAM[winner].name}`}>
+      {/* fundo: o quadro final desfocado preenche a tela; o vídeo aparece inteiro (no celular em pé não corta o braço) */}
+      <img src={`/videos/duelo/vitoria-${file}.webp`} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-2xl" aria-hidden="true" />
+      <video
+        key={file}
+        className="absolute inset-x-0 top-[12%] w-full md:inset-0 md:top-0 md:h-full md:object-contain"
+        src={`/videos/duelo/vitoria-${file}.mp4`}
+        poster={`/videos/duelo/vitoria-${file}.webp`}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        onEnded={() => setFrozen(true)}
+        onError={() => setFrozen(true)}
+      />
+      <div className={`aq-victory-card relative mb-[8vh] mx-4 flex flex-col items-center gap-3 text-center ${frozen ? 'aq-victory-in' : 'opacity-0'}`}>
+        <p className="aq-serif aq-victory-title" style={{ color }}>
+          Vitória do {TEAM[winner].name}!
+        </p>
+        {subtitle && <p className="aq-serif text-[20px] font-bold text-[#1F2A3A]">{subtitle}</p>}
+        <p className="text-[14px] text-[#4A4F5C]">{reason}.</p>
+        <div className="mt-1 flex flex-wrap justify-center gap-2">
+          <button type="button" className="aq-btn aq-btn-ink" onClick={onPlayAgain}>
+            Jogar de novo
+          </button>
+          <button type="button" className="aq-btn" onClick={onClose}>
+            Ver o tabuleiro
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DueloDeMestresGame() {
   const [initial, setInitial] = useState(initialState);
   const [state, setState] = useState(initial);
@@ -136,6 +189,8 @@ export default function DueloDeMestresGame() {
   const aiTurn = mode === 'ai' && state.turn !== human && !outcome;
   const humanCanPlay = !outcome && !thinking && !aiTurn;
   const lastMove = history.length ? history[history.length - 1].move : null;
+  const [victoryClosed, setVictoryClosed] = useState(false);
+  const showVictory = !!outcome && !victoryClosed;
 
   // Fonte com cara de pincel para títulos e nomes
   useEffect(() => {
@@ -238,11 +293,13 @@ export default function DueloDeMestresGame() {
     setState(fresh);
     setHistory([]);
     clearSelection();
+    setVictoryClosed(false);
     if (opts.mode) setMode(opts.mode);
     if (opts.human) setHuman(opts.human);
   };
 
   const undo = () => {
+    setVictoryClosed(false);
     requestRef.current++;
     setThinking(false);
     clearSelection();
@@ -488,6 +545,17 @@ export default function DueloDeMestresGame() {
           </details>
         </aside>
       </main>
+
+      {showVictory && (
+        <VictoryScreen
+          winner={outcome.winner}
+          mode={mode}
+          human={human}
+          reason={outcome.reason}
+          onPlayAgain={() => newGame()}
+          onClose={() => setVictoryClosed(true)}
+        />
+      )}
     </div>
   );
 }
