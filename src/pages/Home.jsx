@@ -68,7 +68,7 @@ const GAMES = [
   {
     id: 'xadrez',
     title: 'Xadrez',
-    image: '/images/site/capa-xadrez.svg',
+    image: '/images/site/capa-xadrez.webp',
     rating: 5,
     gameLink: '/xadrez',
     category: 'tabuleiro',
@@ -143,7 +143,7 @@ const GAMES = [
   {
     id: 'duelo-de-mestres',
     title: 'Duelo de Mestres',
-    image: '/images/site/capa-duelo-de-mestres.svg',
+    image: '/images/site/capa-duelo-de-mestres.webp',
     rating: 5,
     gameLink: '/duelo-de-mestres',
     category: 'tabuleiro',

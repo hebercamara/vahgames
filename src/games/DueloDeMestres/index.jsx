@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import GamePage, { Segmented } from '../../components/GamePage';
-import { BLUE, CARDS, RED, SIZE, TEMPLE, applyMove, colorOf, initialState, isMaster, legalMoves, other, result, sameSquare } from './logic';
+import { Link } from 'react-router-dom';
+import { BLUE, CARDS, RED, SIZE, applyMove, colorOf, initialState, isMaster, legalMoves, other, result, sameSquare } from './logic';
+import './aquarela.css';
 
 // Duelo de Mestres do VAH Games — tabuleiro 5x5 com cartas de movimento,
 // contra o computador ou 2 jogadores no mesmo aparelho.
+// Visual em aquarela: tabuleiro, fichas e cartas pintados para o jogo (public/images/duelo).
 
 const LEVELS = [
   { value: 'facil', label: 'Fácil', depth: 1, randomness: 80 },
@@ -12,54 +14,59 @@ const LEVELS = [
   { value: 'mestre', label: 'Mestre', depth: 6, randomness: 0 },
 ];
 
+const IMG = '/images/duelo';
 const TEAM = {
-  [BLUE]: { name: 'Azul', hex: '#4F8DFF', ring: 'ring-[#B9D2FF]' },
-  [RED]: { name: 'Vermelho', hex: '#FF5470', ring: 'ring-[#FFC2CD]' },
+  [BLUE]: { name: 'Azul', file: 'azul', ink: '#2F5577' },
+  [RED]: { name: 'Vermelho', file: 'vermelho', ink: '#9B3442' },
 };
+
+// Posição da grade 5x5 dentro da imagem do tabuleiro (em %)
+const GRID = { x0: 8.56, x1: 91.5, y0: 8.43, y1: 91.63 };
+const cellW = (GRID.x1 - GRID.x0) / SIZE;
+const cellH = (GRID.y1 - GRID.y0) / SIZE;
 
 // Nome das casas do ponto de vista do Azul: colunas a–e, fileiras 1–5
 const squareName = ([r, c]) => `${'abcde'[c]}${SIZE - r}`;
-const moveName = (m) => (m.from ? `${squareName(m.from)}–${squareName(m.to)}` : 'passou');
+const moveName = (m) => (m.from ? `${squareName(m.from)}–${squareName(m.to)}` : 'trocou a carta');
 
 function statusText(state, outcome, mode, human, thinking, mustPass) {
   if (outcome) {
-    if (mode === 'ai') return outcome.winner === human ? 'Você venceu! 🏆' : 'O computador venceu.';
-    return `${TEAM[outcome.winner].name} vence! 🏆`;
+    if (mode === 'ai') return outcome.winner === human ? 'Você venceu!' : 'O computador venceu.';
+    return `O ${TEAM[outcome.winner].name} vence!`;
   }
-  if (thinking) return 'Computador pensando…';
+  if (thinking) return 'O computador está pensando…';
   const who = mode === 'ai' ? 'Sua vez' : `Vez do ${TEAM[state.turn].name}`;
-  return mustPass ? `${who} — sem movimentos: escolha uma carta para trocar.` : who;
+  return mustPass ? `${who}: sem movimentos, escolha uma carta para trocar.` : who;
 }
 
-const MasterIcon = () => (
-  <svg viewBox="0 0 24 24" className="h-[55%] w-[55%]" fill="currentColor" aria-hidden="true">
-    <path d="M3 8l4.5 3.5L12 5l4.5 6.5L21 8l-2 10H5L3 8zm2 12h14v2H5v-2z" />
-  </svg>
-);
-
-const TempleIcon = ({ color }) => (
-  <svg viewBox="0 0 24 24" className="pointer-events-none absolute aspect-square w-[46%] opacity-40" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-    <path d="M3 6h18M5 10h14M7 6v14M17 6v14M4 3c5 2 11 2 16 0" />
-  </svg>
-);
-
-const Piece = ({ piece }) => {
-  const team = TEAM[colorOf(piece)];
-  const master = isMaster(piece);
-  return (
-    <span
-      className={`flex items-center justify-center rounded-full text-white shadow-micro ring-[3px] ring-inset ${team.ring} aspect-square ${master ? 'w-[80%]' : 'w-[62%]'}`}
-      style={{ background: team.hex }}
-    >
-      {master && <MasterIcon />}
-    </span>
+// Identidade de cada ficha ao longo da partida (para cada aprendiz manter o seu desenho e deslizar)
+function pieceIds(initial, history) {
+  const ids = initial.board.map((row) => row.map(() => null));
+  const count = { [BLUE]: 0, [RED]: 0 };
+  initial.board.forEach((row, r) =>
+    row.forEach((p, c) => {
+      if (!p) return;
+      const color = colorOf(p);
+      ids[r][c] = isMaster(p) ? `${color}-mestre` : `${color}-${++count[color]}`;
+    }),
   );
+  for (const { move } of history) {
+    if (!move.from) continue;
+    ids[move.to[0]][move.to[1]] = ids[move.from[0]][move.from[1]];
+    ids[move.from[0]][move.from[1]] = null;
+  }
+  return ids;
+}
+
+const tokenSrc = (id) => {
+  const [color, which] = id.split('-');
+  return which === 'mestre' ? `${IMG}/mestre-${TEAM[color].file}.webp` : `${IMG}/aprendiz-${TEAM[color].file}-${which}.webp`;
 };
 
-// Carta de movimento: diagrama 5x5 com a peça no centro e as casas de destino.
-// facingTop: a carta é de quem está do outro lado do tabuleiro, então o desenho fica de cabeça para baixo.
-// rotateAll (2 jogadores) gira a carta inteira, nome incluído, para o outro jogador ler.
-function MoveCard({ id, selected, highlight, facingTop, rotateAll, disabled, onClick, label }) {
+// Carta: desenho em aquarela clareado, diagrama de movimentos por cima e o nome embaixo.
+// facingTop: carta de quem está do outro lado, com o diagrama de cabeça para baixo.
+// rotateAll (2 jogadores): gira a carta inteira para o outro jogador ler.
+function MoveCard({ id, selected, highlight, facingTop, rotateAll, disabled, onClick, label, small }) {
   const card = CARDS[id];
   const targets = new Set(card.moves.map(([dx, dy]) => `${2 - dy},${2 + dx}`));
   return (
@@ -69,29 +76,48 @@ function MoveCard({ id, selected, highlight, facingTop, rotateAll, disabled, onC
       disabled={disabled}
       aria-pressed={selected}
       aria-label={`${label ?? ''}Carta ${card.name}`}
-      className={`flex w-full max-w-[150px] flex-col items-center gap-2 rounded-xs p-2.5 transition sm:p-3 ${
-        selected ? 'bg-lime/20 ring-[3px] ring-lime' : highlight ? 'bg-white/[0.12] ring-2 ring-white/30' : 'bg-white/[0.07]'
-      } ${facingTop && rotateAll ? 'rotate-180' : ''} ${disabled ? 'cursor-default' : 'hover:bg-white/[0.14]'}`}
+      className={`aq-card ${small ? 'max-w-[112px]' : 'max-w-[150px]'} ${selected ? 'aq-card-selected' : ''} ${highlight ? 'aq-card-hint' : ''} ${
+        facingTop && rotateAll ? 'rotate-180' : ''
+      } ${disabled ? 'cursor-default' : 'aq-card-active'}`}
     >
-      <div className={`grid aspect-square w-full max-w-[96px] grid-cols-5 grid-rows-5 gap-[2px] ${facingTop && !rotateAll ? 'rotate-180' : ''}`}>
-        {[...Array(25).keys()].map((i) => {
-          const r = Math.floor(i / 5);
-          const c = i % 5;
-          const center = r === 2 && c === 2;
-          const target = targets.has(`${r},${c}`);
-          return <span key={i} className={`rounded-[3px] ${center ? 'bg-ink' : target ? 'bg-lime' : 'bg-white/10'}`} />;
-        })}
-      </div>
-      <span className="flex items-center gap-1.5 text-[13px] font-extrabold text-ink sm:text-[14px]">
-        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: TEAM[card.color].hex }} aria-hidden="true" />
-        {card.name}
+      <span className="relative block aspect-square w-full overflow-hidden rounded-[6px]">
+        <img src={`${IMG}/cartas/${id}.webp`} alt="" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+        <span className={`absolute inset-[18%] grid grid-cols-5 grid-rows-5 gap-[3%] ${facingTop && !rotateAll ? 'rotate-180' : ''}`}>
+          {[...Array(25).keys()].map((i) => {
+            const r = Math.floor(i / 5);
+            const c = i % 5;
+            const center = r === 2 && c === 2;
+            const target = targets.has(`${r},${c}`);
+            return <span key={i} className={`rounded-[2px] ${center ? 'aq-cell-center' : target ? 'aq-cell-target' : 'aq-cell'}`} />;
+          })}
+        </span>
+      </span>
+      <span className="mt-1.5 flex items-center justify-center gap-1.5">
+        <span className="aq-stamp" style={{ background: TEAM[card.color].ink }} aria-hidden="true" />
+        <span className={`aq-serif font-bold text-[#2A2F3A] ${small ? 'text-[12px]' : 'text-[13px] sm:text-[15px]'}`}>{card.name}</span>
       </span>
     </button>
   );
 }
 
+function InkOptions({ label, value, options, onChange }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="aq-label">{label}</span>
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
+        {options.map((opt) => (
+          <button key={opt.value} type="button" role="radio" aria-checked={opt.value === value} className="aq-btn" onClick={() => onChange(opt.value)}>
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function DueloDeMestresGame() {
-  const [state, setState] = useState(initialState);
+  const [initial, setInitial] = useState(initialState);
+  const [state, setState] = useState(initial);
   const [history, setHistory] = useState([]); // [{ state, move, player }]
   const [mode, setMode] = useState('ai');
   const [level, setLevel] = useState('medio');
@@ -105,10 +131,22 @@ export default function DueloDeMestresGame() {
 
   const moves = useMemo(() => legalMoves(state), [state]);
   const outcome = useMemo(() => result(state), [state]);
+  const ids = useMemo(() => pieceIds(initial, history), [initial, history]);
   const mustPass = !outcome && moves.every((m) => !m.from);
   const aiTurn = mode === 'ai' && state.turn !== human && !outcome;
   const humanCanPlay = !outcome && !thinking && !aiTurn;
   const lastMove = history.length ? history[history.length - 1].move : null;
+
+  // Fonte com cara de pincel para títulos e nomes
+  useEffect(() => {
+    const id = 'aq-font';
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&display=swap';
+    document.head.appendChild(link);
+  }, []);
 
   useEffect(() => {
     const worker = new Worker(new URL('./aiWorker.js', import.meta.url), { type: 'module' });
@@ -144,7 +182,7 @@ export default function DueloDeMestresGame() {
       }
     };
     worker.addEventListener('message', onMessage);
-    const t = setTimeout(() => worker.postMessage({ id, state, depth, randomness }), 500);
+    const t = setTimeout(() => worker.postMessage({ id, state, depth, randomness }), 600);
     return () => {
       clearTimeout(t);
       worker.removeEventListener('message', onMessage);
@@ -156,42 +194,48 @@ export default function DueloDeMestresGame() {
     if (!selPiece) return [];
     return moves.filter((m) => m.from && sameSquare(m.from, selPiece) && (!selCard || m.card === selCard));
   }, [moves, selPiece, selCard]);
-  const movable = useMemo(
-    () => moves.filter((m) => m.from && (!selCard || m.card === selCard)).map((m) => m.from),
-    [moves, selCard],
-  );
+  const movable = useMemo(() => moves.filter((m) => m.from && (!selCard || m.card === selCard)).map((m) => m.from), [moves, selCard]);
 
   const onSquare = (r, c) => {
     if (!humanCanPlay || mustPass) return;
     const sq = [r, c];
     const options = targets.filter((m) => sameSquare(m.to, sq));
-    if (options.length === 1) return play(options[0]);
+    if (options.length === 1) {
+      play(options[0]);
+      return;
+    }
     if (options.length > 1) {
       setAmbiguous(sq);
-      return undefined;
+      return;
     }
     setAmbiguous(null);
     if (colorOf(state.board[r][c]) === state.turn) setSelPiece(sameSquare(selPiece, sq) ? null : sq);
     else setSelPiece(null);
-    return undefined;
   };
 
   const onCard = (card) => {
     if (!humanCanPlay) return;
-    if (mustPass) return play({ card, from: null, to: null });
+    if (mustPass) {
+      play({ card, from: null, to: null });
+      return;
+    }
     if (ambiguous) {
       const move = targets.find((m) => m.card === card && sameSquare(m.to, ambiguous));
-      if (move) return play(move);
+      if (move) {
+        play(move);
+        return;
+      }
     }
     setAmbiguous(null);
     setSelCard(selCard === card ? null : card);
-    return undefined;
   };
 
   const newGame = (opts = {}) => {
     requestRef.current++;
     setThinking(false);
-    setState(initialState());
+    const fresh = initialState();
+    setInitial(fresh);
+    setState(fresh);
     setHistory([]);
     clearSelection();
     if (opts.mode) setMode(opts.mode);
@@ -218,9 +262,16 @@ export default function DueloDeMestresGame() {
   const bottom = mode === 'ai' ? human : BLUE;
   const top = other(bottom);
   const flipped = bottom === RED;
-  const idx = [...Array(SIZE).keys()];
-  const order = flipped ? [...idx].reverse() : idx;
+  // Linha/coluna do tabuleiro -> posição na tela
+  const view = (r, c) => (flipped ? [SIZE - 1 - r, SIZE - 1 - c] : [r, c]);
   const lost = (p) => 5 - state.board.flat().filter((x) => colorOf(x) === p).length;
+
+  const tokens = [];
+  state.board.forEach((row, r) =>
+    row.forEach((p, c) => {
+      if (p) tokens.push({ id: ids[r][c] ?? `${r}-${c}`, piece: p, r, c });
+    }),
+  );
 
   const renderHand = (player) => {
     const isTop = player === top;
@@ -228,7 +279,7 @@ export default function DueloDeMestresGame() {
     const playerLabel = mode === 'ai' ? (player === human ? 'Você' : 'Computador') : TEAM[player].name;
     return (
       <div className={`flex items-center gap-3 ${isTop ? 'flex-row-reverse' : ''}`}>
-        <div className="flex flex-1 justify-center gap-3">
+        <div className="flex flex-1 justify-center gap-3 sm:gap-4">
           {state.hands[player].map((card) => (
             <MoveCard
               key={card}
@@ -244,9 +295,11 @@ export default function DueloDeMestresGame() {
           ))}
         </div>
         <div className={`flex w-20 shrink-0 flex-col items-center gap-1 text-center sm:w-24 ${isTop && mode === 'pvp' ? 'rotate-180' : ''}`}>
-          <span className="h-3 w-3 rounded-full" style={{ background: TEAM[player].hex }} aria-hidden="true" />
-          <span className="text-caption uppercase text-muted">{playerLabel}</span>
-          {state.turn === player && !outcome && <span className="text-caption font-bold text-lime">na vez</span>}
+          <img src={`${IMG}/mestre-${TEAM[player].file}.webp`} alt="" className="h-11 w-11 sm:h-12 sm:w-12" draggable={false} />
+          <span className="aq-label" style={{ color: TEAM[player].ink }}>
+            {playerLabel}
+          </span>
+          {state.turn === player && !outcome && <span className="aq-turn">na vez</span>}
         </div>
       </div>
     );
@@ -256,32 +309,33 @@ export default function DueloDeMestresGame() {
   for (let i = 0; i < history.length; i += 2) pairs.push([history[i], history[i + 1]]);
 
   return (
-    <GamePage
-      title="Duelo de Mestres"
-      actions={
-        <button type="button" className="btn-lime" onClick={() => newGame()}>
+    <div className="aq-page min-h-screen px-4 pb-12 pt-4 md:px-8">
+      <header className="mx-auto mb-6 flex max-w-6xl items-center justify-between gap-3">
+        <Link to="/" className="aq-btn shrink-0" aria-label="Voltar ao VAH Games">
+          <span aria-hidden="true">←</span>
+          <span className="hidden sm:inline">VAH Games</span>
+        </Link>
+        <h1 className="aq-serif aq-title min-w-0 truncate text-center">Duelo de Mestres</h1>
+        <button type="button" className="aq-btn aq-btn-ink shrink-0" onClick={() => newGame()}>
           Novo jogo
         </button>
-      }
-    >
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)]">
-        <div className="flex w-full min-w-0 flex-col gap-3">
+      </header>
+
+      <main className="mx-auto grid max-w-6xl grid-cols-1 gap-8 lg:grid-cols-[minmax(0,600px)_minmax(0,1fr)]">
+        <div className="flex w-full min-w-0 flex-col gap-4">
           {renderHand(top)}
 
           <div className="flex items-center gap-3">
-            <div
-              className="grid aspect-square w-full min-w-0 flex-1 grid-cols-5 grid-rows-5 gap-1 rounded-xs bg-navy/60 p-1.5 sm:gap-1.5 sm:p-2"
-              role="grid"
-              aria-label="Tabuleiro do Duelo de Mestres"
-            >
-              {order.map((r) =>
-                order.map((c) => {
+            <div className="aq-board relative aspect-square w-full min-w-0 flex-1" role="grid" aria-label="Tabuleiro do Duelo de Mestres">
+              <img src={`${IMG}/tabuleiro.webp`} alt="" className="absolute inset-0 h-full w-full" draggable={false} />
+
+              {/* Casas: destaques e área de toque */}
+              {[...Array(SIZE).keys()].map((r) =>
+                [...Array(SIZE).keys()].map((c) => {
                   const sq = [r, c];
+                  const [vr, vc] = view(r, c);
                   const piece = state.board[r][c];
-                  const templeOf = sameSquare(sq, TEMPLE[BLUE]) ? BLUE : sameSquare(sq, TEMPLE[RED]) ? RED : null;
                   const isSel = sameSquare(selPiece, sq);
-                  const isTarget = targets.some((m) => sameSquare(m.to, sq));
-                  const isAmb = sameSquare(ambiguous, sq);
                   const isMovable = humanCanPlay && !mustPass && !selPiece && movable.some((s) => sameSquare(s, sq));
                   const isLast = lastMove?.from && (sameSquare(lastMove.from, sq) || sameSquare(lastMove.to, sq));
                   return (
@@ -289,52 +343,83 @@ export default function DueloDeMestresGame() {
                       key={`${r}-${c}`}
                       type="button"
                       role="gridcell"
-                      aria-label={`${squareName(sq)}${piece ? `, ${isMaster(piece) ? 'mestre' : 'aprendiz'} ${TEAM[colorOf(piece)].name.toLowerCase()}` : ''}${templeOf ? `, templo ${TEAM[templeOf].name.toLowerCase()}` : ''}`}
+                      aria-label={`${squareName(sq)}${piece ? `, ${isMaster(piece) ? 'mestre' : 'aprendiz'} ${TEAM[colorOf(piece)].name.toLowerCase()}` : ''}`}
                       onClick={() => onSquare(r, c)}
-                      className={`relative flex items-center justify-center rounded-[10px] transition ${
-                        isSel ? 'bg-violet-bright/70' : isLast ? 'bg-[#9DB86A]/50' : 'bg-white/[0.09]'
-                      } ${isMovable ? 'cursor-pointer hover:bg-white/20' : ''}`}
+                      className={`absolute flex items-center justify-center ${isMovable ? 'cursor-pointer' : ''}`}
+                      style={{ left: `${GRID.x0 + vc * cellW}%`, top: `${GRID.y0 + vr * cellH}%`, width: `${cellW}%`, height: `${cellH}%` }}
                     >
-                      {templeOf && <TempleIcon color={TEAM[templeOf].hex} />}
-                      {piece && <Piece piece={piece} />}
-                      {isTarget && (
-                        <span
-                          className={`pointer-events-none absolute rounded-full ${
-                            piece ? 'inset-1 ring-[3px] ring-lime' : 'aspect-square w-1/4 bg-lime shadow-micro'
-                          } ${isAmb ? 'animate-pulse' : ''}`}
-                        />
-                      )}
-                      {isMovable && <span className="pointer-events-none absolute inset-1 rounded-[8px] ring-1 ring-white/30" />}
+                      {isLast && <span className="aq-wash-last absolute inset-[6%]" />}
+                      {isSel && <span className="aq-wash-sel absolute inset-[4%]" />}
+                      {isMovable && <span className="aq-movable absolute inset-[10%]" />}
                     </button>
                   );
                 }),
               )}
+
+              {/* Fichas: mestre maior, aprendizes menores */}
+              {tokens.map(({ id, piece, r, c }) => {
+                const [vr, vc] = view(r, c);
+                const master = isMaster(piece);
+                const size = master ? 0.9 : 0.68;
+                const isSel = sameSquare(selPiece, [r, c]);
+                return (
+                  <img
+                    key={id}
+                    src={tokenSrc(id)}
+                    alt=""
+                    draggable={false}
+                    className={`aq-token pointer-events-none absolute ${isSel ? 'aq-token-sel' : ''}`}
+                    style={{
+                      left: `${GRID.x0 + (vc + (1 - size) / 2) * cellW}%`,
+                      top: `${GRID.y0 + (vr + (1 - size) / 2) * cellH}%`,
+                      width: `${cellW * size}%`,
+                      height: `${cellH * size}%`,
+                    }}
+                  />
+                );
+              })}
+
+              {/* Destinos por cima das fichas (o toque passa para a casa embaixo) */}
+              {targets.map(({ to, card }) => {
+                const [vr, vc] = view(to[0], to[1]);
+                const capture = !!state.board[to[0]][to[1]];
+                const amb = sameSquare(ambiguous, to);
+                return (
+                  <span
+                    key={`${card}-${to}`}
+                    className="pointer-events-none absolute flex items-center justify-center"
+                    style={{ left: `${GRID.x0 + vc * cellW}%`, top: `${GRID.y0 + vr * cellH}%`, width: `${cellW}%`, height: `${cellH}%` }}
+                  >
+                    {capture ? <span className={`aq-capture absolute inset-[3%] ${amb ? 'animate-pulse' : ''}`} /> : <span className={`aq-dot ${amb ? 'animate-pulse' : ''}`} />}
+                  </span>
+                );
+              })}
             </div>
 
-            <div className="flex w-[84px] shrink-0 flex-col items-center gap-1 sm:w-[110px]">
-              <span className="text-caption uppercase text-muted">Próxima</span>
-              <MoveCard id={state.side} disabled facingTop={state.turn === top} rotateAll={mode === 'pvp'} />
+            <div className="flex w-[84px] shrink-0 flex-col items-center gap-1.5 sm:w-[112px]">
+              <span className="aq-label">Próxima</span>
+              <MoveCard id={state.side} disabled small facingTop={state.turn === top} rotateAll={mode === 'pvp'} />
             </div>
           </div>
 
           {renderHand(bottom)}
         </div>
 
-        <aside className="flex flex-col gap-4">
-          <div className={`rounded-xs p-5 ${outcome ? 'bg-grad-green' : 'bg-grad-blue'}`}>
-            <p className="text-caption uppercase text-muted">Situação</p>
-            <p className="mt-1 text-heading-xs font-black text-ink" role="status" aria-live="polite">
+        <aside className="flex flex-col gap-5">
+          <div className={`aq-panel ${outcome ? 'aq-panel-win' : ''}`}>
+            <p className="aq-label">Situação</p>
+            <p className="aq-serif mt-1 text-[22px] font-extrabold leading-tight text-[#1F2A3A]" role="status" aria-live="polite">
               {statusText(state, outcome, mode, human, thinking, mustPass)}
             </p>
-            {outcome && <p className="mt-1 text-body-md text-body">{outcome.reason}.</p>}
-            {ambiguous && <p className="mt-1 text-body-md text-body">As duas cartas chegam nessa casa: toque na carta que quer usar.</p>}
-            <p className="mt-2 text-body-md text-body">
-              Peças perdidas — Azul: <b className="text-ink">{lost(BLUE)}</b> · Vermelho: <b className="text-ink">{lost(RED)}</b>
+            {outcome && <p className="mt-2 text-[14px] text-[#4A4F5C]">{outcome.reason}.</p>}
+            {ambiguous && <p className="mt-2 text-[14px] text-[#4A4F5C]">As duas cartas chegam nessa casa: toque na carta que quer usar.</p>}
+            <p className="mt-3 text-[14px] text-[#4A4F5C]">
+              Peças perdidas: <b style={{ color: TEAM[BLUE].ink }}>Azul {lost(BLUE)}</b> · <b style={{ color: TEAM[RED].ink }}>Vermelho {lost(RED)}</b>
             </p>
           </div>
 
-          <div className="panel flex flex-col gap-4">
-            <Segmented
+          <div className="aq-panel flex flex-col gap-4">
+            <InkOptions
               label="Modo"
               value={mode}
               onChange={(m) => newGame({ mode: m })}
@@ -345,8 +430,8 @@ export default function DueloDeMestresGame() {
             />
             {mode === 'ai' && (
               <>
-                <Segmented label="Dificuldade" value={level} onChange={setLevel} options={LEVELS} />
-                <Segmented
+                <InkOptions label="Dificuldade" value={level} onChange={setLevel} options={LEVELS} />
+                <InkOptions
                   label="Jogar com"
                   value={human}
                   onChange={(p) => newGame({ human: p })}
@@ -358,26 +443,26 @@ export default function DueloDeMestresGame() {
               </>
             )}
             <div>
-              <button type="button" className="btn-ghost px-4" onClick={undo} disabled={history.length === 0}>
+              <button type="button" className="aq-btn" onClick={undo} disabled={history.length === 0}>
                 Desfazer lance
               </button>
             </div>
           </div>
 
-          <div className="panel">
-            <h2 className="subheading mb-3">Lances</h2>
+          <div className="aq-panel">
+            <h2 className="aq-serif mb-3 text-[20px] font-extrabold text-[#1F2A3A]">Lances</h2>
             {pairs.length === 0 ? (
-              <p className="text-body-md text-muted">Toque numa peça sua e depois numa casa marcada. Para usar só uma das cartas, toque nela antes.</p>
+              <p className="text-[14px] text-[#4A4F5C]">Toque numa ficha sua e depois numa casa marcada. Para usar só uma das cartas, toque nela antes.</p>
             ) : (
-              <ol className="grid max-h-56 grid-cols-[auto_1fr_1fr] gap-x-3 gap-y-1 overflow-y-auto text-body-md">
+              <ol className="grid max-h-56 grid-cols-[auto_1fr_1fr] gap-x-3 gap-y-1 overflow-y-auto text-[14px] text-[#2A2F3A]">
                 {pairs.map(([a, b], i) => (
                   <React.Fragment key={i}>
-                    <span className="text-muted">{i + 1}.</span>
+                    <span className="text-[#8A8578]">{i + 1}.</span>
                     {[a, b].map((h, j) => (
-                      <span key={j} className="font-bold text-ink">
+                      <span key={j} className="font-semibold">
                         {h && (
                           <>
-                            <span className="mr-1 inline-block h-2 w-2 rounded-full" style={{ background: TEAM[h.player].hex }} aria-hidden="true" />
+                            <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: TEAM[h.player].ink }} aria-hidden="true" />
                             {CARDS[h.move.card].name} {moveName(h.move)}
                           </>
                         )}
@@ -389,20 +474,20 @@ export default function DueloDeMestresGame() {
             )}
           </div>
 
-          <details className="panel group">
-            <summary className="cursor-pointer text-body-lg font-extrabold text-ink">Regras</summary>
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-body-md text-body">
-              <li>Cada lado tem 1 mestre (com coroa) e 4 aprendizes. Só 5 cartas entram em cada partida: 2 para cada jogador e 1 ao lado do tabuleiro.</li>
-              <li>Na sua vez, escolha uma das suas cartas e mova uma peça como mostra o desenho dela (o quadrado branco é a peça).</li>
-              <li>Pode capturar peças do adversário, mas não pode cair em cima de uma peça sua nem sair do tabuleiro.</li>
+          <details className="aq-panel">
+            <summary className="aq-serif cursor-pointer text-[18px] font-extrabold text-[#1F2A3A]">Regras</summary>
+            <ul className="mt-3 list-disc space-y-1.5 pl-5 text-[14px] text-[#3A3F4C]">
+              <li>Cada lado tem 1 mestre (a ficha maior) e 4 aprendizes. Só 5 cartas entram em cada partida: 2 para cada jogador e 1 ao lado do tabuleiro.</li>
+              <li>Na sua vez, escolha uma das suas cartas e mova uma ficha como mostra o desenho dela (o quadrado escuro é a ficha).</li>
+              <li>Pode capturar fichas do adversário, mas não pode cair em cima de uma ficha sua nem sair do tabuleiro.</li>
               <li>A carta usada vai para o lado do tabuleiro e você pega a carta que estava lá. O adversário recebe a sua carta depois.</li>
               <li>Se não houver nenhum movimento possível, você só troca uma das suas cartas.</li>
               <li>Quem começa é a cor do carimbo da carta do lado no início.</li>
-              <li>Vence quem capturar o mestre adversário (Caminho da Pedra) ou levar o seu mestre até o templo inicial do adversário (Caminho do Riacho).</li>
+              <li>Vence quem capturar o mestre adversário (Caminho da Pedra) ou levar o seu mestre até o portal do templo do adversário (Caminho do Riacho).</li>
             </ul>
           </details>
         </aside>
-      </div>
-    </GamePage>
+      </main>
+    </div>
   );
 }

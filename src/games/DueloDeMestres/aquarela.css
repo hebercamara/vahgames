@@ -1,0 +1,184 @@
+/* Visual em aquarela do Duelo de Mestres (foge de propósito do tema escuro do portal) */
+.aq-page {
+  color: #2A2F3A;
+  font-family: 'Outfit', sans-serif;
+  background-color: #F3EDE1;
+  background-image:
+    radial-gradient(ellipse 40% 30% at 8% 12%, rgba(86, 128, 150, 0.22), transparent 70%),
+    radial-gradient(ellipse 35% 28% at 92% 20%, rgba(196, 160, 90, 0.2), transparent 70%),
+    radial-gradient(ellipse 45% 35% at 85% 88%, rgba(110, 140, 110, 0.18), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 10% 85%, rgba(160, 90, 100, 0.12), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 50%, rgba(255, 255, 255, 0.5), transparent 80%);
+  background-attachment: fixed;
+}
+.aq-serif {
+  font-family: 'Shippori Mincho', 'Georgia', serif;
+}
+.aq-title {
+  font-size: clamp(20px, 4vw, 34px);
+  font-weight: 800;
+  color: #1F2A3A;
+  letter-spacing: 0.02em;
+}
+.aq-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7A7466;
+}
+.aq-turn {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #B5532F;
+}
+
+/* Papel com borda manchada */
+.aq-panel {
+  position: relative;
+  padding: 20px;
+  border-radius: 6px;
+  background: rgba(252, 249, 242, 0.88);
+  box-shadow:
+    0 0 0 1px rgba(150, 125, 85, 0.25),
+    inset 0 0 28px rgba(190, 160, 110, 0.18),
+    0 6px 18px rgba(70, 55, 30, 0.1);
+}
+.aq-panel-win {
+  background:
+    radial-gradient(ellipse 80% 70% at 20% 30%, rgba(196, 160, 90, 0.28), transparent 75%),
+    rgba(252, 249, 242, 0.92);
+}
+
+/* Botões de tinta */
+.aq-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 16px;
+  border-radius: 999px 860px 920px 980px / 880px 999px 900px 960px;
+  font-family: 'Shippori Mincho', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #2A3A52;
+  background: rgba(255, 253, 248, 0.7);
+  box-shadow: inset 0 0 0 1.5px rgba(42, 58, 82, 0.55);
+  transition: background 150ms, transform 80ms;
+}
+.aq-btn:hover:not(:disabled) {
+  background: rgba(86, 128, 150, 0.14);
+}
+.aq-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.aq-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.aq-btn[aria-checked='true'],
+.aq-btn-ink {
+  color: #FBF7EE;
+  background: #2F4A66;
+  box-shadow: inset 0 0 0 1.5px #2F4A66, 0 2px 6px rgba(47, 74, 102, 0.3);
+}
+.aq-btn[aria-checked='true']:hover,
+.aq-btn-ink:hover:not(:disabled) {
+  background: #3A5A7A;
+}
+
+/* Tabuleiro */
+.aq-board {
+  filter: drop-shadow(0 10px 18px rgba(70, 55, 30, 0.18));
+}
+.aq-token {
+  filter: drop-shadow(0 3px 3px rgba(40, 30, 20, 0.35));
+  transition: left 320ms ease, top 320ms ease, transform 150ms ease;
+}
+.aq-token-sel {
+  transform: translateY(-6%) scale(1.06);
+  filter: drop-shadow(0 8px 6px rgba(40, 30, 20, 0.4));
+}
+.aq-wash-last {
+  border-radius: 40% 55% 45% 50%;
+  background: radial-gradient(ellipse at center, rgba(214, 170, 80, 0.38), rgba(214, 170, 80, 0.12) 70%, transparent 80%);
+}
+.aq-wash-sel {
+  border-radius: 48% 52% 50% 46%;
+  background: radial-gradient(ellipse at center, rgba(86, 128, 150, 0.45), rgba(86, 128, 150, 0.15) 70%, transparent 82%);
+}
+.aq-movable {
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgba(47, 74, 102, 0.0);
+  transition: box-shadow 150ms;
+}
+button:hover > .aq-movable {
+  box-shadow: inset 0 0 0 2px rgba(47, 74, 102, 0.35);
+}
+.aq-dot {
+  width: 30%;
+  height: 30%;
+  border-radius: 46% 54% 50% 48%;
+  background: radial-gradient(circle at 45% 40%, rgba(181, 83, 47, 0.85), rgba(181, 83, 47, 0.55) 60%, rgba(181, 83, 47, 0) 75%);
+}
+.aq-capture {
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 4px rgba(181, 83, 47, 0.8), 0 0 10px rgba(181, 83, 47, 0.45);
+}
+
+/* Cartas */
+.aq-card {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  padding: 7px 7px 8px;
+  border-radius: 8px;
+  background: #FBF7EE;
+  box-shadow:
+    0 0 0 1px rgba(150, 125, 85, 0.3),
+    inset 0 0 16px rgba(190, 160, 110, 0.22),
+    0 4px 10px rgba(70, 55, 30, 0.14);
+  transition: transform 150ms, box-shadow 150ms;
+}
+.aq-card-active:hover {
+  transform: translateY(-3px);
+}
+.aq-card-selected {
+  box-shadow:
+    0 0 0 3px #2F4A66,
+    inset 0 0 16px rgba(190, 160, 110, 0.22),
+    0 8px 16px rgba(47, 74, 102, 0.3);
+  transform: translateY(-4px);
+}
+.aq-card-hint {
+  box-shadow:
+    0 0 0 2px rgba(181, 83, 47, 0.7),
+    inset 0 0 16px rgba(190, 160, 110, 0.22),
+    0 4px 10px rgba(70, 55, 30, 0.14);
+}
+.aq-card.rotate-180:hover {
+  transform: rotate(180deg) translateY(-3px);
+}
+.aq-card-selected.rotate-180 {
+  transform: rotate(180deg) translateY(-4px);
+}
+.aq-cell {
+  background: rgba(255, 252, 245, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(60, 70, 85, 0.28);
+}
+.aq-cell-center {
+  background: rgba(36, 48, 66, 0.85);
+}
+.aq-cell-target {
+  background: rgba(181, 83, 47, 0.78);
+}
+.aq-stamp {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  transform: rotate(-6deg);
+  opacity: 0.9;
+}
