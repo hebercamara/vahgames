@@ -42,7 +42,7 @@
 
         /* Pista: escala para caber na altura da tela, sempre na proporção 5:6 */
         .stage { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
-        canvas { display: block; width: min(100%, calc((100dvh - 250px) * 5 / 6)); aspect-ratio: 5 / 6; height: auto;
+        canvas { display: block;
                  border-radius: 16px; background: #2B2C33; box-shadow: 0 10px 30px rgba(0,0,0,.6); touch-action: none; }
         @media (max-width: 420px) { .hide-sm { display: none; } }
         .hint { margin: 0; font-size: 13px; color: var(--muted); text-align: center; }
@@ -168,6 +168,27 @@
         // Set internal resolution to match design intent
         canvas.width = 500;
         canvas.height = 600;
+
+        // A pista ocupa todo o espaço livre: a largura interna fica em 500 e a altura cresce
+        // conforme a tela (de 600 até 1000), mostrando mais estrada à frente no celular.
+        function fitCanvas() {
+            const stage = document.querySelector('.stage');
+            const W = stage.clientWidth, H = stage.clientHeight;
+            if (!W || !H) return;
+            const h = Math.round(Math.max(600, Math.min(1000, 500 * H / W)));
+            if (canvas.height !== h) {
+                canvas.height = h;
+                if (typeof playerCar !== 'undefined' && playerCar) playerCar.y = canvas.height - carHeight - 42;
+            }
+            const scale = Math.min(W / 500, H / canvas.height);
+            canvas.style.width = Math.floor(500 * scale) + 'px';
+            canvas.style.height = Math.floor(canvas.height * scale) + 'px';
+        }
+        let fitTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(fitTimer);
+            fitTimer = setTimeout(() => { fitCanvas(); if (gameState !== 'playing') drawIdleTrack(); }, 100);
+        });
         const ctx = canvas.getContext('2d');
         const scoreDisplay = document.getElementById('score');
         const highScoreDisplay = document.getElementById('highScore');
@@ -899,6 +920,7 @@
         });
 
         loadGameData();
+        fitCanvas();
         calculateLanePositions();
         drawIdleTrack();
         showMenu();
