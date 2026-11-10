@@ -1,0 +1,132 @@
+/* Visual vitrificado das Damas: vidro fosco sobre um fundo escuro com manchas azul e laranja */
+.vd-page {
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  background-color: #0B0F1E;
+  background-image:
+    radial-gradient(ellipse 45% 40% at 8% 10%, rgba(40, 140, 220, 0.38), transparent 70%),
+    radial-gradient(ellipse 40% 38% at 95% 85%, rgba(255, 140, 30, 0.32), transparent 70%),
+    radial-gradient(ellipse 35% 30% at 80% 8%, rgba(110, 80, 200, 0.28), transparent 70%),
+    radial-gradient(ellipse 50% 45% at 30% 95%, rgba(60, 90, 180, 0.25), transparent 75%);
+  background-attachment: fixed;
+}
+.vd-title {
+  font-family: 'Unbounded', 'Outfit', sans-serif;
+  font-size: clamp(20px, 4vw, 28px);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: linear-gradient(180deg, #FFFFFF 0%, #B9DDF5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.vd-subtitle {
+  font-size: 18px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #fff;
+}
+.vd-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Painéis de vidro fosco */
+.vd-panel {
+  position: relative;
+  padding: 20px;
+  border-radius: 22px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -12px 24px rgba(0, 0, 0, 0.15),
+    0 12px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+.vd-panel-win {
+  background: linear-gradient(160deg, rgba(255, 190, 70, 0.3), rgba(255, 255, 255, 0.05));
+}
+
+/* Botões de vidro */
+.vd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 150ms, transform 80ms;
+}
+.vd-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+}
+.vd-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.vd-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.vd-btn[aria-checked='true'] {
+  background: linear-gradient(180deg, rgba(91, 200, 255, 0.75), rgba(40, 120, 220, 0.7));
+  border-color: rgba(190, 235, 255, 0.7);
+}
+.vd-btn-primary {
+  background: linear-gradient(180deg, rgba(255, 180, 70, 0.95), rgba(240, 120, 20, 0.9));
+  border-color: rgba(255, 220, 160, 0.8);
+  color: #2B1300;
+}
+.vd-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(255, 195, 100, 1), rgba(245, 135, 35, 0.95));
+}
+
+/* Tabuleiro e peças */
+.vd-board {
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.55));
+}
+.vd-piece {
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.45));
+  transition: transform 150ms;
+}
+.vd-piece-movable {
+  cursor: pointer;
+}
+button:hover > .vd-piece-movable {
+  transform: scale(1.06);
+}
+.vd-selected {
+  border-radius: 14%;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 3px rgba(255, 230, 160, 0.95), 0 0 18px rgba(255, 210, 120, 0.7);
+}
+.vd-last {
+  border-radius: 12%;
+  background: rgba(255, 200, 90, 0.22);
+  box-shadow: inset 0 0 0 2px rgba(255, 210, 120, 0.45);
+}
+.vd-must {
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(255, 220, 120, 0.9), 0 0 14px rgba(255, 200, 80, 0.8);
+}
+.vd-dot {
+  width: 32%;
+  height: 32%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #FFFFFF, rgba(190, 230, 255, 0.85) 45%, rgba(91, 200, 255, 0.4) 75%);
+  box-shadow: 0 0 14px rgba(140, 215, 255, 0.9);
+}

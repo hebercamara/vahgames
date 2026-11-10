@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import GamePage, { Segmented } from '../../components/GamePage';
+import { Link } from 'react-router-dom';
 import { SIZE, applyMove, colorOf, initialState, isKing, legalMoves, result, sameSquare } from './logic';
+import './vidro.css';
 
 // Damas do VAH Games — regra brasileira, contra o computador ou 2 jogadores no mesmo aparelho.
+// Visual vitrificado: tabuleiro e peças de vidro (public/images/damas). Azuis = 'w' (começam), Laranjas = 'b'.
 
 const LEVELS = [
   { value: 'facil', label: 'Fácil', depth: 1, randomness: 60 },
@@ -11,7 +13,17 @@ const LEVELS = [
   { value: 'mestre', label: 'Mestre', depth: 7, randomness: 0 },
 ];
 
-const colorName = (c) => (c === 'w' ? 'Claras' : 'Escuras');
+const IMG = '/images/damas';
+// Posição da grade 8x8 dentro da imagem do tabuleiro (em %)
+const GRID = { x0: 3.44, x1: 96.91, y0: 4.11, y1: 96.48 };
+const cellW = (GRID.x1 - GRID.x0) / SIZE;
+const cellH = (GRID.y1 - GRID.y0) / SIZE;
+
+const TEAM = {
+  w: { name: 'Azuis', file: 'azul', ink: '#5BC8FF' },
+  b: { name: 'Laranjas', file: 'laranja', ink: '#FF9F1C' },
+};
+const colorName = (c) => TEAM[c].name;
 const squareName = ([r, c]) => `${'abcdefgh'[c]}${SIZE - r}`;
 const moveName = (m) => m.path.map(squareName).join(m.captured.length ? '×' : '–');
 
@@ -23,26 +35,25 @@ function statusText(state, outcome, mode, human, thinking, mustCapture) {
   }
   if (thinking) return 'Computador pensando…';
   const who = mode === 'ai' ? 'Sua vez' : `Vez das ${colorName(state.turn)}`;
-  return mustCapture ? `${who} — captura obrigatória!` : who;
+  return mustCapture ? `${who}: captura obrigatória!` : who;
 }
 
-const Piece = ({ piece }) => {
-  const light = colorOf(piece) === 'w';
+const pieceSrc = (piece) => `${IMG}/${TEAM[colorOf(piece)].file}${isKing(piece) ? '-dama' : ''}.webp`;
+
+function GlassOptions({ label, value, options, onChange }) {
   return (
-    <span
-      className={`relative flex h-[78%] w-[78%] items-center justify-center rounded-full shadow-micro ${
-        light ? 'bg-light-fill text-navy ring-[3px] ring-inset ring-neutral-1' : 'bg-canvas text-lime ring-[3px] ring-inset ring-navy'
-      }`}
-    >
-      <span className={`absolute inset-[22%] rounded-full ${light ? 'border-2 border-neutral-1' : 'border-2 border-navy'}`} />
-      {isKing(piece) && (
-        <svg viewBox="0 0 24 24" className="relative h-1/2 w-1/2" fill="currentColor" aria-hidden="true">
-          <path d="M3 8l4.5 3.5L12 5l4.5 6.5L21 8l-2 10H5L3 8zm2 12h14v2H5v-2z" />
-        </svg>
-      )}
-    </span>
+    <div className="flex flex-col gap-2">
+      <span className="vd-label">{label}</span>
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
+        {options.map((opt) => (
+          <button key={String(opt.value)} type="button" role="radio" aria-checked={opt.value === value} className="vd-btn" onClick={() => onChange(opt.value)}>
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
-};
+}
 
 export default function DamasGame() {
   const [state, setState] = useState(initialState);
@@ -150,84 +161,88 @@ export default function DamasGame() {
   };
 
   const flipped = mode === 'ai' && human === 'b';
-  const rows = [...Array(SIZE).keys()];
-  const order = flipped ? [...rows].reverse() : rows;
+  const view = (r, c) => (flipped ? [SIZE - 1 - r, SIZE - 1 - c] : [r, c]);
   const count = (color) => state.board.flat().filter((p) => colorOf(p) === color).length;
+  const cells = [];
+  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) cells.push([r, c]);
 
   const pairs = [];
   for (let i = 0; i < history.length; i += 2) pairs.push([history[i].move, history[i + 1]?.move]);
 
   return (
-    <GamePage
-      title="Damas"
-      actions={
-        <button type="button" className="btn-lime" onClick={() => newGame()}>
+    <div className="vd-page min-h-screen px-4 pb-12 pt-4 md:px-8">
+      <header className="mx-auto mb-6 flex max-w-6xl items-center justify-between gap-3">
+        <Link to="/" className="vd-btn shrink-0" aria-label="Voltar ao VAH Games">
+          <span aria-hidden="true">←</span>
+          <span className="hidden sm:inline">VAH Games</span>
+        </Link>
+        <h1 className="vd-title min-w-0 truncate">Damas</h1>
+        <button type="button" className="vd-btn vd-btn-primary shrink-0" onClick={() => newGame()}>
           Novo jogo
         </button>
-      }
-    >
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,640px)_minmax(0,1fr)]">
+      </header>
+
+      <main className="mx-auto grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-[minmax(0,640px)_minmax(0,1fr)]">
         <div className="w-full min-w-0">
-          <div
-            className="grid aspect-square w-full max-w-[640px] grid-cols-8 overflow-hidden rounded-xs border-2 border-line"
-            role="grid"
-            aria-label="Tabuleiro de damas"
-          >
-            {order.map((r) =>
-              (flipped ? [...rows].reverse() : rows).map((c) => {
-                const dark = (r + c) % 2 === 1;
-                const piece = state.board[r][c];
-                const sq = [r, c];
-                const isSelected = path.some((s) => sameSquare(s, sq));
-                const isNext = nextSquares.some((s) => sameSquare(s, sq));
-                const isMovable = humanCanPlay && !path.length && movablePieces.some((s) => sameSquare(s, sq));
-                const isLast = lastMove && (sameSquare(lastMove.path[0], sq) || sameSquare(lastMove.path[lastMove.path.length - 1], sq));
-                const isPending = pendingCaptures.some((s) => sameSquare(s, sq));
-                return (
-                  <button
-                    key={`${r}-${c}`}
-                    type="button"
-                    role="gridcell"
-                    aria-label={`${squareName(sq)}${piece ? (colorOf(piece) === 'w' ? ', peça clara' : ', peça escura') + (isKing(piece) ? ' (dama)' : '') : ''}`}
-                    onClick={() => onSquare(r, c)}
-                    disabled={!dark}
-                    className={`relative flex items-center justify-center ${dark ? 'bg-lavender' : 'bg-neutral-1'} ${
-                      isLast && dark ? '!bg-[#9DB86A]' : ''
-                    } ${isSelected ? '!bg-violet-bright' : ''} disabled:cursor-default`}
-                  >
-                    {piece && (
-                      <span className={`flex h-full w-full items-center justify-center transition ${isPending ? 'opacity-40' : ''} ${isMovable ? 'cursor-pointer hover:scale-105' : ''}`}>
-                        <Piece piece={piece} />
-                      </span>
-                    )}
-                    {isMovable && mustCapture && <span className="pointer-events-none absolute inset-1 rounded-full ring-2 ring-lime" />}
-                    {isNext && <span className="pointer-events-none absolute h-1/3 w-1/3 rounded-full bg-lime shadow-micro" />}
-                    {c === (flipped ? SIZE - 1 : 0) && (
-                      <span className="pointer-events-none absolute left-1 top-0.5 text-[10px] font-bold text-navy/70">{SIZE - r}</span>
-                    )}
-                    {r === (flipped ? 0 : SIZE - 1) && (
-                      <span className="pointer-events-none absolute bottom-0.5 right-1 text-[10px] font-bold text-navy/70">{'abcdefgh'[c]}</span>
-                    )}
-                  </button>
-                );
-              }),
-            )}
+          <div className="vd-board relative w-full" style={{ aspectRatio: '842 / 852' }} role="grid" aria-label="Tabuleiro de damas">
+            <img src={`${IMG}/tabuleiro.webp`} alt="" className="absolute inset-0 h-full w-full" draggable={false} />
+            {cells.map(([r, c]) => {
+              const [vr, vc] = view(r, c);
+              const dark = (r + c) % 2 === 1;
+              const piece = state.board[r][c];
+              const sq = [r, c];
+              const isSelected = path.some((s) => sameSquare(s, sq));
+              const isNext = nextSquares.some((s) => sameSquare(s, sq));
+              const isMovable = humanCanPlay && !path.length && movablePieces.some((s) => sameSquare(s, sq));
+              const isLast = lastMove && (sameSquare(lastMove.path[0], sq) || sameSquare(lastMove.path[lastMove.path.length - 1], sq));
+              const isPending = pendingCaptures.some((s) => sameSquare(s, sq));
+              return (
+                <button
+                  key={`${r}-${c}`}
+                  type="button"
+                  role="gridcell"
+                  aria-label={`${squareName(sq)}${piece ? `, peça ${TEAM[colorOf(piece)].file}${isKing(piece) ? ' (dama)' : ''}` : ''}`}
+                  onClick={() => onSquare(r, c)}
+                  disabled={!dark}
+                  className="absolute flex items-center justify-center disabled:cursor-default"
+                  style={{ left: `${GRID.x0 + vc * cellW}%`, top: `${GRID.y0 + vr * cellH}%`, width: `${cellW}%`, height: `${cellH}%` }}
+                >
+                  {isLast && dark && <span className="vd-last absolute inset-[6%]" />}
+                  {isSelected && <span className="vd-selected absolute inset-[4%]" />}
+                  {piece && (
+                    <img
+                      src={pieceSrc(piece)}
+                      alt=""
+                      draggable={false}
+                      className={`vd-piece relative h-[84%] w-[84%] ${isPending ? 'opacity-35' : ''} ${isMovable ? 'vd-piece-movable' : ''}`}
+                    />
+                  )}
+                  {isMovable && mustCapture && <span className="vd-must pointer-events-none absolute inset-[6%]" />}
+                  {isNext && <span className="vd-dot pointer-events-none absolute" />}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         <aside className="flex flex-col gap-4">
-          <div className={`rounded-xs p-5 ${outcome ? 'bg-grad-green' : 'bg-grad-rose'}`}>
-            <p className="text-caption uppercase text-muted">Situação</p>
-            <p className="mt-1 text-heading-xs font-black text-ink" role="status" aria-live="polite">
+          <div className={`vd-panel ${outcome ? 'vd-panel-win' : ''}`}>
+            <p className="vd-label">Situação</p>
+            <p className="mt-1 text-[22px] font-black leading-tight text-white" role="status" aria-live="polite">
               {statusText(state, outcome, mode, human, thinking, mustCapture)}
             </p>
-            <p className="mt-2 text-body-md text-body">
-              Claras: <b className="text-ink">{count('w')}</b> · Escuras: <b className="text-ink">{count('b')}</b>
-            </p>
+            <div className="mt-3 flex items-center gap-4 text-[15px] font-bold text-white/85">
+              <span className="flex items-center gap-2">
+                <img src={`${IMG}/azul.webp`} alt="" className="h-6 w-6" /> {count('w')}
+              </span>
+              <span className="flex items-center gap-2">
+                <img src={`${IMG}/laranja.webp`} alt="" className="h-6 w-6" /> {count('b')}
+              </span>
+            </div>
           </div>
 
-          <div className="panel flex flex-col gap-4">
-            <Segmented
+          <div className="vd-panel flex flex-col gap-4">
+            <GlassOptions
               label="Modo"
               value={mode}
               onChange={(m) => newGame({ mode: m })}
@@ -238,55 +253,55 @@ export default function DamasGame() {
             />
             {mode === 'ai' && (
               <>
-                <Segmented label="Dificuldade" value={level} onChange={setLevel} options={LEVELS} />
-                <Segmented
+                <GlassOptions label="Dificuldade" value={level} onChange={setLevel} options={LEVELS} />
+                <GlassOptions
                   label="Jogar com"
                   value={human}
                   onChange={(c) => newGame({ human: c })}
                   options={[
-                    { value: 'w', label: 'Claras' },
-                    { value: 'b', label: 'Escuras' },
+                    { value: 'w', label: 'Azuis' },
+                    { value: 'b', label: 'Laranjas' },
                   ]}
                 />
               </>
             )}
             <div>
-              <button type="button" className="btn-ghost px-4" onClick={undo} disabled={history.length === 0}>
+              <button type="button" className="vd-btn" onClick={undo} disabled={history.length === 0}>
                 Desfazer lance
               </button>
             </div>
           </div>
 
-          <div className="panel">
-            <h2 className="subheading mb-3">Lances</h2>
+          <div className="vd-panel">
+            <h2 className="vd-subtitle mb-3">Lances</h2>
             {pairs.length === 0 ? (
-              <p className="text-body-md text-muted">Toque numa peça e depois na casa de destino. Nas capturas em sequência, toque em cada parada.</p>
+              <p className="text-[14px] text-white/70">Toque numa peça e depois na casa de destino. Nas capturas em sequência, toque em cada parada.</p>
             ) : (
-              <ol className="grid max-h-56 grid-cols-[auto_1fr_1fr] gap-x-3 gap-y-1 overflow-y-auto text-body-md">
+              <ol className="grid max-h-56 grid-cols-[auto_1fr_1fr] gap-x-3 gap-y-1 overflow-y-auto text-[14px]">
                 {pairs.map(([a, b], i) => (
                   <React.Fragment key={i}>
-                    <span className="text-muted">{i + 1}.</span>
-                    <span className="font-bold text-ink">{moveName(a)}</span>
-                    <span className="font-bold text-ink">{b ? moveName(b) : ''}</span>
+                    <span className="text-white/50">{i + 1}.</span>
+                    <span className="font-bold" style={{ color: TEAM.w.ink }}>{moveName(a)}</span>
+                    <span className="font-bold" style={{ color: TEAM.b.ink }}>{b ? moveName(b) : ''}</span>
                   </React.Fragment>
                 ))}
               </ol>
             )}
           </div>
 
-          <details className="panel group">
-            <summary className="cursor-pointer text-body-lg font-extrabold text-ink">Regras (brasileiras)</summary>
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-body-md text-body">
-              <li>As Claras começam. As pedras andam uma casa na diagonal, para frente.</li>
+          <details className="vd-panel">
+            <summary className="vd-subtitle cursor-pointer">Regras (brasileiras)</summary>
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-[14px] text-white/80">
+              <li>As Azuis começam. As pedras andam uma casa na diagonal, para frente.</li>
               <li>Capturar é obrigatório, inclusive para trás, e vale a jogada que captura mais peças.</li>
-              <li>A pedra que termina o lance na última fileira vira dama.</li>
+              <li>A pedra que termina o lance na última fileira vira dama (a peça com a estrela).</li>
               <li>A dama anda e captura a qualquer distância na diagonal.</li>
               <li>Vence quem capturar ou bloquear todas as peças do adversário.</li>
               <li>Após 20 lances seguidos só de damas, sem captura, o jogo empata.</li>
             </ul>
           </details>
         </aside>
-      </div>
-    </GamePage>
+      </main>
+    </div>
   );
 }
