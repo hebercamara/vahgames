@@ -140,6 +140,17 @@ const GAMES = [
     isNew: true,
     latest: true, // leva mais recente: aparece primeiro em Novidades
   },
+  {
+    id: 'duelo-de-mestres',
+    title: 'Duelo de Mestres',
+    image: '/images/site/capa-duelo-de-mestres.svg',
+    rating: 5,
+    gameLink: '/duelo-de-mestres',
+    category: 'tabuleiro',
+    tagline: 'Use as cartas de movimento e derrube o mestre rival.',
+    isNew: true,
+    latest: true, // leva mais recente: aparece primeiro em Novidades
+  },
   // Hextris: Hextris/hextris (GPL-3.0) em public/games/hextris
   {
     id: 'hextris',

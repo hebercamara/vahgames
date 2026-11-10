@@ -23,7 +23,7 @@ Os workflows ficam em `.github/workflows/`. A chave de acesso ao Firebase é o s
 ```
 src/
   pages/Home.jsx        página inicial (galeria, ranking, comunidade)
-  games/                jogos em React (Xadrez, Damas, Quebra-Tijolos, Termo, Sudoku, Cobrinha, Lousa Mágica/Telestrations)
+  games/                jogos em React (Xadrez, Damas, Quebra-Tijolos, Termo, Sudoku, Cobrinha, Duelo de Mestres, Lousa Mágica/Telestrations)
   components/GamePage.jsx  moldura comum das páginas de jogo
   services/firebase.js  configuração do Firebase (Realtime Database)
 public/
@@ -51,6 +51,7 @@ npm run dev
   [react-chessboard](https://github.com/Clariity/react-chessboard) (MIT) e computador com
   [js-chess-engine](https://github.com/josefjadrny/js-chess-engine) (MIT).
 - Damas: implementação própria com a regra brasileira (`src/games/Damas/logic.js`).
+- Duelo de Mestres: implementação própria de um jogo de tabuleiro 5x5 com cartas de movimento (`src/games/DueloDeMestres`).
 - Quebra-Tijolos: jogo próprio do VAH Games (`src/games/QuebraTijolos`).
 - 2048: [gabrielecirulli/2048](https://github.com/gabrielecirulli/2048) de Gabriele Cirulli (MIT), com tema
   visual VAH em `public/games/2048/style/vah.css`. Licença em `public/games/2048/LICENSE.txt`.
