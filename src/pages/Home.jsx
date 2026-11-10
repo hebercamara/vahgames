@@ -273,12 +273,6 @@ const icons = {
       <path d="M8 21v-7h8v7M8 14l8 7M16 14l-8 7" />
     </>
   ),
-  users: (
-    <>
-      <circle cx="9" cy="8" r="3.5" />
-      <path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6" />
-    </>
-  ),
   search: (
     <>
       <circle cx="11" cy="11" r="7" />
@@ -303,7 +297,6 @@ const NAV_ITEMS = [
   { href: '#categorias', label: 'Gêneros', icon: icons.grid },
   { href: '#fazenda', label: 'Fazenda', icon: icons.barn },
   { href: '#ranking', label: 'Ranking', icon: icons.trophy },
-  { href: '#comunidade', label: 'Turma', icon: icons.users },
 ];
 
 const Sidebar = ({ open, onClose }) => (
@@ -518,7 +511,7 @@ const Categories = ({ active, onSelect }) => (
 );
 
 // ---------------------------------------------------------------------------
-// Ranking e comunidade
+// Ranking
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
@@ -639,7 +632,7 @@ const GeneralRanking = () => {
     <div id="ranking" className="panel flex min-w-0 scroll-mt-24 flex-col">
       <h2 className="subheading">Ranking geral</h2>
       <p className="mb-3 text-body-md text-muted">Os melhores resultados de cada jogo.</p>
-      <div className="no-scrollbar -mx-5 mb-4 flex gap-2 overflow-x-auto px-5" role="tablist" aria-label="Jogo do ranking">
+      <div className="no-scrollbar -mx-5 mb-4 flex gap-2 overflow-x-auto px-5 md:flex-wrap md:overflow-visible" role="tablist" aria-label="Jogo do ranking">
         {RANKED_GAMES.map(([id, label]) => (
           <button
             key={id}
@@ -686,21 +679,9 @@ const GeneralRanking = () => {
   );
 };
 
-const Community = () => (
-  <section id="comunidade" className="scroll-mt-24 px-4 md:px-8">
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-      <div className="flex min-w-0 flex-col items-start justify-center gap-4 rounded-xs bg-grad-teal p-5 md:p-8">
-        <h2 className="heading">Comunidade</h2>
-        <p className="max-w-xl font-display text-[18px] font-bold leading-[1.4] text-ink md:text-body-xl">
-          Junte-se à turma VAH! Troque dicas, desafie os amigos e mostre quem manda no ranking.
-        </p>
-        <p className="max-w-xl text-body-lg text-body">
-          Participe das discussões, sugira novos jogos e faça novos amigos que curtem jogar tanto quanto você.
-        </p>
-        <button type="button" className="btn-light">Acesse o fórum</button>
-      </div>
-      <GeneralRanking />
-    </div>
+const RankingSection = () => (
+  <section className="px-4 md:px-8">
+    <GeneralRanking />
   </section>
 );
 
@@ -813,7 +794,7 @@ export default function Home() {
           <Carousel id="jogos" title="Todos os jogos" games={SOLO_GAMES} />
           <FarmSection />
           <Carousel id="favoritos" title="Mais bem avaliados" games={topRated} />
-          <Community />
+          <RankingSection />
         </main>
         <Footer />
       </div>
