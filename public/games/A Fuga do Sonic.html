@@ -114,12 +114,19 @@
             text-align: center;
             z-index: 20;
         }
+        /* não depende do Tailwind (CDN) para esconder as telas de carregando/fim de jogo */
+        .hidden { display: none !important; }
+        #rings { display: flex; align-items: center; gap: 6px; }
+        .ring-icon { width: 22px; height: 22px; background: url('/images/fuga-do-sonic/argola.png') 0 0 / 400% 100% no-repeat;
+                     image-rendering: pixelated; animation: ringSpin .4s steps(4) infinite; }
+        @keyframes ringSpin { to { background-position: -88px 0; } }
     </style>
 </head>
 <body>
     <div class="game-container">
         <div class="game-info">
             <div id="score">Pontuação: 0</div>
+            <div id="rings"><span class="ring-icon" aria-hidden="true"></span><span id="ringCount">0</span></div>
             <div id="high-score">Recorde: 0</div>
         </div>
         <canvas id="gameCanvas" width="360" height="500"></canvas>
@@ -133,6 +140,7 @@
         </div>
         <div class="instructions">
             <p>Deslize para cima para pular.</p>
+            <p>Pegue as argolas: cada uma vale 10 pontos e a cada 10 você ganha +100!</p>
             <p>Deslize para os lados para mudar de faixa.</p>
             <p>Use as setas do teclado para jogar no desktop.</p>
             <p>No desktop, clique e arraste para pular ou mudar de faixa.</p>
@@ -140,58 +148,7 @@
     </div>
 
     <script type="module">
-        // Firebase imports (MANDATORY, even if not used for persistence in this game)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, query, where, addDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global variables for Firebase (MANDATORY)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let app, db, auth, userId;
-        let isAuthReady = false;
-
-        // Initialize Firebase and authenticate
-        async function initializeFirebase() {
-            try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        console.log("Firebase: User authenticated:", userId);
-                    } else {
-                        console.log("Firebase: User not authenticated. Attempting anonymous authentication...");
-                        try {
-                            if (initialAuthToken) {
-                                await signInWithCustomToken(auth, initialAuthToken);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                            userId = auth.currentUser?.uid || crypto.randomUUID(); // Fallback for anonymous
-                            console.log("Firebase: Anonymous/custom authentication successful. User ID:", userId);
-                        } catch (error) {
-                            console.error("Firebase: Authentication error:", error);
-                            userId = crypto.randomUUID(); // Fallback if auth fails
-                        }
-                    }
-                    isAuthReady = true;
-                    // You can now safely perform Firestore operations here, if needed.
-                    // For this game, we are not using Firestore for persistence.
-                });
-            } catch (error) {
-                console.error("Firebase: Error initializing Firebase:", error);
-                userId = crypto.randomUUID(); // Fallback if init fails
-                isAuthReady = true;
-            }
-        }
-
-        // Call Firebase initialization
-        initializeFirebase();
+        // VAH Games: o Firebase importado aqui nunca era usado; se o servidor dele falhasse, o jogo não abria.
 
 
         // --- Game Logic ---
@@ -231,6 +188,7 @@
         const roadImage = new Image();
         const smallObstacleImage = new Image();
         const largeObstacleImage = new Image();
+        const ringSheet = new Image(); // 4 quadros de 17x17 lado a lado
 
         // Setting direct links for images
         sonicRunFrames[0].src = '/images/fuga-do-sonic/Sonic-Running-1.png';
@@ -238,13 +196,15 @@
         roadImage.src = '/images/fuga-do-sonic/Estrada.png';
         smallObstacleImage.src = '/images/fuga-do-sonic/Obstaculo-pequeno.png';
         largeObstacleImage.src = '/images/fuga-do-sonic/Obstaculo-grande.png';
+        ringSheet.src = '/images/fuga-do-sonic/argola.png';
 
         let imagesLoaded = 0;
         const allImages = [
             ...sonicRunFrames,
             roadImage,
             smallObstacleImage,
-            largeObstacleImage
+            largeObstacleImage,
+            ringSheet
         ];
         const totalImages = allImages.length;
 
@@ -374,6 +334,116 @@
             };
         }
 
+        // --- Argolas ---
+        // Aparecem em fileiras no caminho; ao pegar, sobem e somem. A cada RING_BONUS_EVERY argolas, bônus de pontos.
+        const RING_SIZE = 34;
+        const RING_POINTS = 10;
+        const RING_BONUS_EVERY = 10;
+        const RING_BONUS_POINTS = 100;
+        let rings = [];
+        let ringsCollected = 0;
+        let lastRingSpawnTime = 0;
+        let nextRingDelay = 1200;
+        let popups = []; // textos de bônus que sobem
+        const ringCountDisplay = document.getElementById('ringCount');
+
+        function Ring(lane, y, lift = 0) {
+            this.lane = lane;
+            this.size = RING_SIZE;
+            this.x = lane * laneWidth + (laneWidth - this.size) / 2;
+            this.y = y;
+            this.lift = lift; // argolas em arco ficam mais altas: só se pega pulando
+            this.collected = false;
+            this.t = 0; // tempo desde que foi pega (s)
+
+            this.update = function() {
+                this.y += gameSpeed;
+                if (this.collected) {
+                    this.t += 1 / 60;
+                    this.y -= gameSpeed + 4; // sobe enquanto some
+                }
+            };
+
+            this.draw = function(time) {
+                const frame = Math.floor(time / 100) % 4;
+                const grow = this.collected ? 1 + this.t * 1.2 : 1;
+                const s = this.size * grow;
+                const x = this.x + (this.size - s) / 2;
+                const y = this.y - this.lift + (this.size - s) / 2;
+                ctx.save();
+                if (this.collected) ctx.globalAlpha = Math.max(0, 1 - this.t / 0.45);
+                ctx.imageSmoothingEnabled = false;
+                if (ringSheet.complete && ringSheet.naturalWidth) {
+                    ctx.drawImage(ringSheet, frame * 17, 0, 17, 17, x, y, s, s);
+                } else {
+                    ctx.strokeStyle = '#FFE600';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.arc(x + s / 2, y + s / 2, s / 2 - 3, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            };
+        }
+
+        // Fileira de argolas numa faixa sem obstáculo chegando; às vezes em arco por cima de um obstáculo baixo
+        function spawnRings(currentTime) {
+            const free = [0, 1, 2].filter(l => !obstacles.some(o => o.lane === l && o.y < 160));
+            const shortAhead = obstacles.filter(o => o.type === 'short' && o.y < 60 && o.y > -60);
+            const count = 3 + Math.floor(Math.random() * 4);
+            if (shortAhead.length && Math.random() < 0.5) {
+                // arco de argolas sobre o obstáculo baixo
+                const o = shortAhead[0];
+                for (let k = 0; k < 5; k++) {
+                    const lift = Math.sin((k / 4) * Math.PI) * 70;
+                    rings.push(new Ring(o.lane, o.y - 30 - k * 42 + 90, lift));
+                }
+            } else if (free.length) {
+                const lane = free[Math.floor(Math.random() * free.length)];
+                for (let k = 0; k < count; k++) rings.push(new Ring(lane, -RING_SIZE - k * 46));
+            }
+            lastRingSpawnTime = currentTime;
+            nextRingDelay = 900 + Math.random() * 1300;
+        }
+
+        function collectRing(ring) {
+            ring.collected = true;
+            ringsCollected += 1;
+            score += RING_POINTS;
+            ringCountDisplay.textContent = ringsCollected;
+            if (ringsCollected % RING_BONUS_EVERY === 0) {
+                score += RING_BONUS_POINTS;
+                popups.push({ text: `${ringsCollected} argolas! +${RING_BONUS_POINTS}`, y: canvas.height / 2, t: 0 });
+            }
+        }
+
+        function ringTouchesPlayer(ring) {
+            const pad = 6;
+            const ry = ring.y - ring.lift;
+            return ring.lane === player.lane &&
+                   player.x + pad < ring.x + ring.size && player.x + player.width - pad > ring.x &&
+                   player.y + pad < ry + ring.size && player.y + player.height - pad > ry;
+        }
+
+        function drawPopups() {
+            popups.forEach(p => {
+                p.t += 1 / 60;
+                const a = Math.max(0, 1 - p.t / 1.4);
+                ctx.save();
+                ctx.globalAlpha = a;
+                ctx.font = '900 26px Outfit, Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = 'rgba(12,13,20,0.85)';
+                ctx.fillStyle = '#FFE600';
+                const y = p.y - p.t * 60;
+                ctx.strokeText(p.text, canvas.width / 2, y);
+                ctx.fillText(p.text, canvas.width / 2, y);
+                ctx.restore();
+            });
+            popups = popups.filter(p => p.t < 1.4);
+        }
+
         // Obstacle Object
         function Obstacle(lane, type) {
             this.width = (type === 'tall') ? 80 : 60; // Adjust width for image
@@ -409,6 +479,12 @@
             player = new Player();
             chaser = new Chaser();
             obstacles = [];
+            rings = [];
+            popups = [];
+            ringsCollected = 0;
+            lastRingSpawnTime = 0;
+            nextRingDelay = 1200;
+            ringCountDisplay.textContent = 0;
             score = 0;
             gameOver = false;
             gameSpeed = 5;
@@ -501,6 +577,14 @@
                 return obstacle.y < canvas.height + obstacle.height;
             });
 
+            // Argolas: aparecem, andam com a pista e são pegas ao encostar no Sonic
+            if (currentTime - lastRingSpawnTime > nextRingDelay) spawnRings(currentTime);
+            rings.forEach(ring => {
+                ring.update();
+                if (!ring.collected && ringTouchesPlayer(ring)) collectRing(ring);
+            });
+            rings = rings.filter(r => (r.collected ? r.t < 0.45 : r.y < canvas.height + r.size));
+
             updateScoreDisplay();
 
             // Draw
@@ -517,8 +601,10 @@
             }
 
             obstacles.forEach(obstacle => obstacle.draw());
+            rings.forEach(ring => ring.draw(currentTime));
             player.draw();
             chaser.draw(); // Chaser is drawn behind the player
+            drawPopups();
 
             requestAnimationFrame(gameLoop);
         }
