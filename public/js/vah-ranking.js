@@ -241,18 +241,39 @@
 
     if (input) {
       input.value = lastName || '';
-      setTimeout(function () { input.focus(); input.select(); }, 50);
+      // Quem acaba de perder costuma estar apertando teclas (Espaço, setas...). O campo recebe o foco já,
+      // para o jogo não reagir por trás, mas só aceita texto depois de um instante; e o nome lembrado
+      // não fica selecionado (senão a primeira tecla o apagaria e o botão Salvar parecia não fazer nada).
+      input.readOnly = true;
+      input.focus();
+      setTimeout(function () {
+        input.readOnly = false;
+        try { input.focus(); input.setSelectionRange(input.value.length, input.value.length); } catch (err) { /* sem seleção */ }
+      }, 900);
+      input.addEventListener('input', function () {
+        input.setCustomValidity('');
+        var trimmed = input.value.replace(/^\s+/, '');
+        if (trimmed !== input.value) input.value = trimmed;
+      });
       overlay.querySelector('.vahr-form').addEventListener('submit', function (e) {
         e.preventDefault();
         var name = cleanName(input.value);
-        if (!name) return;
+        if (!name) {
+          input.value = '';
+          input.setCustomValidity('Digite o seu nome');
+          input.reportValidity();
+          input.focus();
+          return;
+        }
         lsSet(NAME_KEY, name);
         var btn = overlay.querySelector('.vahr-lime');
         btn.disabled = true;
         btn.textContent = 'Salvando…';
         save(game, name, score).then(function (r) {
           var form = overlay.querySelector('.vahr-form');
-          var msg = r.improved ? 'Salvo! Este é o seu recorde.' : 'Seu recorde continua sendo ' + Number(r.best).toLocaleString('pt-BR') + ' ' + info.unit + '.';
+          var msg = !r.online
+            ? 'Não consegui falar com o ranking online: o resultado ficou salvo só neste aparelho.'
+            : r.improved ? 'Salvo! Este é o seu recorde.' : 'Seu recorde continua sendo ' + Number(r.best).toLocaleString('pt-BR') + ' ' + info.unit + '.';
           form.innerHTML = '<p class="vahr-note" style="margin:0 0 4px;color:#C7FF5B">' + esc(msg) + '</p>' +
             '<div class="vahr-row"><button type="button" class="vahr-btn vahr-ghost" data-close>Fechar</button></div>';
           return top(game, 10).then(function (res) { renderList(board, res, game, nameKey(name)); });
