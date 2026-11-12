@@ -9,6 +9,7 @@ import TermoGame from './games/Termo/index';
 import SudokuGame from './games/Sudoku/index';
 import CobrinhaGame from './games/Cobrinha/index';
 import DueloDeMestresGame from './games/DueloDeMestres/index';
+import SinucaGame from './games/Sinuca/index';
 
 // Jogos servidos como páginas estáticas em public/games
 const redirectTo = (url) => {
@@ -46,6 +47,7 @@ function App() {
           <Route path="/sudoku" element={<SudokuGame />} />
           <Route path="/cobrinha" element={<CobrinhaGame />} />
           <Route path="/duelo-de-mestres" element={<DueloDeMestresGame />} />
+          <Route path="/sinuca" element={<SinucaGame />} />
           <Route path="/hextris" element={<RedirectToHextris />} />
           <Route path="/torre" element={<RedirectToTorre />} />
         </Routes>

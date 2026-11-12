@@ -1,0 +1,45 @@
+/* Layout da Sinuca: uma coluna no celular em pé; mesa + painel no computador;
+   mesa à esquerda e controles à direita no celular deitado (pouca altura). */
+.sn-layout {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'cards' 'table' 'controls' 'aside';
+}
+.sn-cards {
+  display: flex;
+  gap: 8px;
+}
+@media (min-width: 1024px) {
+  .sn-layout {
+    column-gap: 24px;
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-areas: 'cards aside' 'table aside' 'controls aside';
+  }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  .sn-layout {
+    column-gap: 16px;
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-areas: 'table cards' 'table controls' 'table aside';
+  }
+  .sn-cards {
+    flex-direction: column;
+  }
+}
+
+/* Telas baixas (celular em pé com barras do navegador): contador no lugar das bolinhas, para a mesa ficar maior */
+.sn-count {
+  display: none;
+}
+@media (max-height: 700px) and (orientation: portrait) {
+  .sn-balls {
+    display: none !important;
+  }
+  .sn-count {
+    display: inline !important;
+    color: #fff;
+  }
+}
