@@ -151,6 +151,17 @@ const GAMES = [
     isNew: true,
     latest: true, // leva mais recente: aparece primeiro em Novidades
   },
+  {
+    id: 'sinuca',
+    title: 'Sinuca',
+    image: '/images/site/capa-sinuca.webp',
+    rating: 5,
+    gameLink: '/sinuca',
+    category: 'tabuleiro',
+    tagline: 'Bola 8: contra o computador ou com um amigo.',
+    isNew: true,
+    latest: true, // leva mais recente: aparece primeiro em Novidades
+  },
   // Hextris: Hextris/hextris (GPL-3.0) em public/games/hextris
   {
     id: 'hextris',

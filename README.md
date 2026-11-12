@@ -23,7 +23,7 @@ Os workflows ficam em `.github/workflows/`. A chave de acesso ao Firebase é o s
 ```
 src/
   pages/Home.jsx        página inicial (galeria, ranking, comunidade)
-  games/                jogos em React (Xadrez, Damas, Quebra-Tijolos, Termo, Sudoku, Cobrinha, Duelo de Mestres, Lousa Mágica/Telestrations)
+  games/                jogos em React (Xadrez, Damas, Quebra-Tijolos, Termo, Sudoku, Cobrinha, Duelo de Mestres, Sinuca, Lousa Mágica/Telestrations)
   components/GamePage.jsx  moldura comum das páginas de jogo
   services/firebase.js  configuração do Firebase (Realtime Database)
 public/
@@ -52,6 +52,8 @@ npm run dev
   (`src/games/Xadrez/PixelBoard.jsx`) e peças desenhadas para o VAH Games em `public/images/xadrez`.
   Fonte Press Start 2P (SIL Open Font License 1.1) em `public/fonts`.
 - Damas: implementação própria com a regra brasileira (`src/games/Damas/logic.js`).
+- Sinuca (bola 8): jogo próprio do VAH Games (`src/games/Sinuca`): física, regras e computador escritos do zero,
+  mesa e bolas desenhadas por código e sons sintetizados (sem arquivos de imagem ou áudio).
 - Duelo de Mestres: implementação própria de um jogo de tabuleiro 5x5 com cartas de movimento (`src/games/DueloDeMestres`),
   com tabuleiro, fichas e cartas em aquarela feitos para o VAH Games (`public/images/duelo`).
 - Quebra-Tijolos: jogo próprio do VAH Games (`src/games/QuebraTijolos`).
