@@ -1,0 +1,20 @@
+/* Bomba Arena: controles de toque só em telas de toque ou estreitas */
+.ba-touch { display: none; }
+@media (pointer: coarse), (max-width: 760px) {
+  .ba-touch { display: flex; }
+  .ba-keys { display: none; }
+}
+.ba-canvas { touch-action: none; }
+.ba-pad { touch-action: none; user-select: none; -webkit-user-select: none; }
+/* celular deitado: direcional à esquerda, tabuleiro no meio, bomba à direita, sem rolar */
+@media (orientation: landscape) and (max-height: 520px) {
+  .ba-stage { flex-direction: row !important; align-items: center; justify-content: center; gap: 12px; }
+  .ba-stage .ba-board { max-width: calc((100dvh - 112px) * 13 / 11) !important; flex: 0 1 auto; }
+  .ba-hud { display: none !important; }
+  .ba-pad-d { height: 112px !important; width: 112px !important; }
+  .ba-pad-b { height: 88px !important; width: 88px !important; font-size: 32px !important; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  .ba-touch { display: contents; }
+  .ba-pad-d { order: -1; }
+}
