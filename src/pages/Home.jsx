@@ -162,6 +162,17 @@ const GAMES = [
     isNew: true,
     latest: true, // leva mais recente: aparece primeiro em Novidades
   },
+  {
+    id: 'bomba-arena',
+    title: 'Bomba Arena',
+    image: '/images/site/capa-bomba-arena.svg',
+    rating: 5,
+    gameLink: '/bomba-arena',
+    category: 'acao',
+    tagline: 'Exploda blocos, pegue itens e vença os bots ou um amigo.',
+    isNew: true,
+    latest: true, // leva mais recente: aparece primeiro em Novidades
+  },
   // Hextris: Hextris/hextris (GPL-3.0) em public/games/hextris
   {
     id: 'hextris',
